@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phrasebook</title>
+<!-- GitHub Pages serves index.html for the bare directory URL, and 404s if it
+     isn't there. The app itself lives in phrasebook.html; this only forwards.
+     The installed home-screen app skips this file entirely — the manifest's
+     start_url points straight at phrasebook.html. -->
+<meta http-equiv="refresh" content="0; url=phrasebook.html">
+<link rel="canonical" href="phrasebook.html">
+<style>
+  body{background:#12131a;color:#9aa0b8;margin:0;height:100vh;
+       display:flex;align-items:center;justify-content:center;
+       font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  a{color:#7c8cff}
+</style>
+</head>
+<body>
+<p><a href="phrasebook.html">Open Phrasebook</a></p>
+<script>location.replace("phrasebook.html");</script>
+</body>
+</html>
