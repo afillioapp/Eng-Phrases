@@ -6,6 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#12131a">
+<!-- All relative: this is served from a subpath (/Eng-Phrases/) on GitHub
+     Pages, so anything absolute would resolve off the site. iOS gives
+     apple-touch-icon priority over the manifest's icons, and applies its own
+     rounded mask, so that PNG is deliberately square and full-bleed. -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-32.png" sizes="32x32" type="image/png">
 <title>Phrasebook</title>
 <style>
   :root{
@@ -154,7 +161,7 @@
       <button class="btn ghost" id="importbtn">Restore</button>
     </div>
     <input type="file" id="importfile" accept=".json" style="display:none">
-    <p class="hint" style="text-align:center">Everything is stored on this device only. Back up now and then.</p>
+    <p class="hint" style="text-align:center" id="backup-hint">Everything is stored on this device only.</p>
   </section>
 
   <!-- REVIEW -->
@@ -259,6 +266,7 @@ $("#f-phrase").addEventListener("keydown", e => { if (e.key === "Enter"){ e.prev
 /* ---------- words list ---------- */
 let open = null;
 function renderList(){
+  refreshBackupHint();
   const q = $("#search").value.trim().toLowerCase();
   const rows = items.filter(i => !q ||
     (i.phrase+" "+i.meaning+" "+i.source).toLowerCase().includes(q));
@@ -362,12 +370,35 @@ function grade(knew){
 }
 
 /* ---------- backup ---------- */
+/* Kept under its own key so the phrasebook.v1 array keeps its shape. */
+const BKEY = "phrasebook.backup";
+
+/* Day index from a "YYYY-MM-DD" string. Built from the parts rather than
+   new Date(s), which would parse as UTC midnight and be a day out here. */
+const dayNum = s => { const p = String(s).split("-").map(Number);
+  return Date.UTC(p[0], p[1]-1, p[2]) / 86400000; };
+
+function refreshBackupHint(){
+  const el = $("#backup-hint"), last = localStorage.getItem(BKEY);
+  if (!items.length){ el.textContent = "Everything is stored on this device only."; el.style.color = ""; return; }
+  if (!last){
+    el.textContent = "Never backed up. Everything is stored on this device only.";
+    el.style.color = "var(--warn)"; return;
+  }
+  const n = dayNum(today()) - dayNum(last);
+  el.textContent = n <= 0 ? "Backed up today."
+    : n === 1 ? "Last backed up yesterday."
+    : "Last backed up " + n + " days ago.";
+  el.style.color = n >= 14 ? "var(--warn)" : "";
+}
+
 $("#export").onclick = () => {
   const blob = new Blob([JSON.stringify(items,null,2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "phrasebook-" + today() + ".json";
-  a.click(); URL.revokeObjectURL(a.href); toast("Backed up");
+  a.click(); URL.revokeObjectURL(a.href);
+  localStorage.setItem(BKEY, today()); refreshBackupHint(); toast("Backed up");
 };
 $("#importbtn").onclick = () => $("#importfile").click();
 $("#importfile").onchange = e => {
@@ -388,8 +419,20 @@ $("#importfile").onchange = e => {
   r.readAsText(f);
 };
 
+/* ---------- offline ---------- */
+/* Relative path, never "/sw.js" — served from a subpath on GitHub Pages, so
+   an absolute path resolves off the site entirely. file:// has no service
+   workers at all, hence the protocol guard. */
+if ("serviceWorker" in navigator && location.protocol !== "file:"){
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+/* Asks the browser to treat this origin's storage as durable. Safari grants
+   or refuses it silently based on how much the site has been used, so it is
+   a hint rather than a guarantee — Back up is still the real safety net. */
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+
 /* ---------- boot ---------- */
-refreshChrome();
+refreshChrome(); refreshBackupHint();
 if (dueNow().length && items.length > 3) go("review"); else go("add");
 
 /* expose for tests */
