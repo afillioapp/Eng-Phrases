@@ -1,0 +1,12 @@
+{
+  "name": "phrasebook-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Test harness for phrasebook.html. The app itself has no dependencies; jsdom is dev-only tooling for the test runner.",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1"
+  }
+}
