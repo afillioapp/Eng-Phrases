@@ -4,3 +4,4 @@ package-lock.json
 *.log
 phrasebook-*.json
 .claude/settings.local.json
+.claude/launch.json
