@@ -27,7 +27,11 @@
     background:var(--bg);color:var(--text);
     font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     display:flex;flex-direction:column;
-    padding-bottom:env(safe-area-inset-bottom);
+    /* No bottom safe-area inset here: nav is the last flex child and reserves
+       it itself, so having it on both left a dead strip under the nav bar in
+       standalone mode. overflow-wrap inherits, so one rule keeps a long
+       unbroken phrase from pushing the card sideways. */
+    overflow-wrap:break-word;
   }
   header{
     padding:calc(14px + env(safe-area-inset-top)) 18px 12px;
@@ -61,11 +65,14 @@
   .row>*{flex:1}
 
   .toast{
-    position:fixed;left:50%;transform:translateX(-50%);bottom:88px;
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(88px + env(safe-area-inset-bottom));
     background:var(--good);color:#06210f;padding:10px 18px;border-radius:999px;
     font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:20;
   }
-  .toast.on{opacity:1;bottom:96px}
+  /* Offsets include the inset, or the toast lands on the nav row itself once
+     there is no browser chrome below it. */
+  .toast.on{opacity:1;bottom:calc(96px + env(safe-area-inset-bottom))}
 
   .card{
     background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -79,7 +86,7 @@
   .pill.known{color:var(--good);border-color:#28613f}
   .pill.due{color:var(--warn);border-color:#6b4b17}
   .acts{display:flex;gap:8px;margin-top:12px}
-  .acts button{flex:1;padding:9px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:13px}
+  .acts button{flex:1;padding:9px;min-height:44px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:13px}
   .acts button.del{color:#ff7a7a}
 
   .empty{text-align:center;color:var(--muted);padding:48px 20px;font-size:15px}
@@ -190,7 +197,12 @@ const $ = s => document.querySelector(s);
 /* ---------- storage ---------- */
 let items = [];
 try { items = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e){ items = []; }
-const save = () => localStorage.setItem(KEY, JSON.stringify(items));
+/* If the write fails — a full disk, Safari private mode — say so out loud.
+   Failing silently here would look exactly like a successful save. */
+const save = () => {
+  try { localStorage.setItem(KEY, JSON.stringify(items)); }
+  catch(e){ toast("Couldn't save — storage is full"); }
+};
 
 /* ---------- dates ---------- */
 const dayStr = d => { const x = d ? new Date(d) : new Date();

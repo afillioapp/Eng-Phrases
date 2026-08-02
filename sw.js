@@ -21,7 +21,7 @@
  */
 "use strict";
 
-const VERSION = "1";
+const VERSION = "2";
 const CACHE = "phrasebook-v" + VERSION;
 
 /* Relative paths throughout: this is served from a subpath on GitHub Pages
@@ -68,8 +68,12 @@ self.addEventListener("fetch", e => {
     e.respondWith(
       fetch(req)
         .then(res => {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(req, copy));
+          /* Only cache a good response — otherwise a transient error page
+             gets stored and served offline until the next VERSION bump. */
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then(c => c.put(req, copy));
+          }
           return res;
         })
         .catch(() => caches.match(req).then(hit => hit || caches.match("phrasebook.html")))
