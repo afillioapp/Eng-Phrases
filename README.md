@@ -7,8 +7,12 @@ captures it with his own definition plus a note about the situation he heard it 
 the context is what makes it stick. At night he opens the Review tab and flips
 through flashcards.
 
-Live at **https://afillioapp.github.io/Eng-Phrases/** once GitHub Pages is switched
-on — see [DEPLOY.md](DEPLOY.md).
+Planned home: **https://afillioapp.github.io/Eng-Phrases/**. **Not live yet** — the
+code has never been pushed to GitHub, so there is nothing there to serve. See
+[DEPLOY.md](DEPLOY.md).
+
+A design mockup with sample phrases is at **https://eng-phrases.vercel.app**. It's
+for looking at: it never saves anything.
 
 ---
 
@@ -44,6 +48,7 @@ is gitignored.
 | `icons/` | Five PNGs: 32, 180, 192, 512, and a 512 maskable. |
 | `tools/make-icons.js` | Regenerates the icons. No image library — `node tools/make-icons.js`. |
 | `tests/` | jsdom test suite. |
+| `mockup/index.html` | Throwaway design mockup with sample phrases, online at eng-phrases.vercel.app. Not the app. |
 | `.nojekyll` | Stops GitHub Pages running the files through Jekyll. |
 | `CLAUDE.md` | Project rules, loaded automatically by Claude Code each session. |
 | `DEPLOY.md` | Getting it onto the phone, step by step. |

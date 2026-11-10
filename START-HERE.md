@@ -1,7 +1,7 @@
 # Working on this in VS Code
 
-The setup steps that used to be here are done — git is initialised, the app is a
-working PWA, and there's a test suite. This is what to do from here.
+Most of the setup is done — git is initialised, the app is a working PWA, and there's
+a test suite. **What's left is getting it online: step 4.**
 
 ---
 
@@ -36,19 +36,23 @@ npm test
 You should see `pass 34`. If you don't, something is wrong before you've even
 started — say so.
 
-### 4. Connect it to GitHub
+### 4. Push it to GitHub — not done yet
 
-This hasn't been done yet. Check first:
+The GitHub address is already connected (`git remote -v` prints `origin`), but
+nothing has ever been pushed. The repository on GitHub is still empty, so the app
+isn't online anywhere.
 
-```bash
-git remote -v
-```
+**Before your first push, know two things:**
 
-If that prints nothing, add the remote and push:
+- **The repository is public.** Everything you commit becomes visible to anyone.
+  Your phrases aren't in the code, and `.gitignore` keeps backup files out.
+- **Vercel is linked to the repository** and rebuilds on every push. Left as it is,
+  your first push replaces the design mockup at eng-phrases.vercel.app with the whole
+  project. Decide where the real app should live — GitHub Pages, as
+  [DEPLOY.md](DEPLOY.md) describes, or Vercel — and ask Claude to set Vercel up to
+  match before you push.
 
-```bash
-git remote add origin git@github.com:afillioapp/Eng-Phrases.git
-```
+Then push:
 
 ```bash
 git push -u origin main
@@ -66,8 +70,8 @@ git remote set-url origin https://github.com/afillioapp/Eng-Phrases.git
 git push -u origin main
 ```
 
-Then follow [DEPLOY.md](DEPLOY.md) to switch on GitHub Pages and install the app on
-your phone.
+If the app is going on GitHub Pages, follow [DEPLOY.md](DEPLOY.md) next to switch
+Pages on and install the app on your phone.
 
 ---
 
@@ -88,7 +92,8 @@ npm test
 ```
 
 **Committing.** Small commits, one logical change each, with a message saying what
-changed and why.
+changed and why. Run `git status` first — it lists what will be included. If you see
+a file you don't recognise, ask before committing it: the repository is public.
 
 ```bash
 git add -A
@@ -96,7 +101,8 @@ git commit -m "What changed and why"
 git push
 ```
 
-A push automatically republishes the site. Allow up to 10 minutes.
+Once the app is online, a push republishes it. Allow up to 10 minutes. Vercel also
+rebuilds on every push.
 
 ---
 
@@ -116,6 +122,44 @@ offline copy would stay behind.
 
 ---
 
+## Importing your WhatsApp phrases
+
+Copy them into a Word file, one phrase per block, with an empty line between phrases:
+
+```text
+To cut them slack
+Meaning: To treat them less harshly
+
+You should come with
+Situation: I overheard a colleague
+```
+
+- Line 1 is always the phrase.
+- `Meaning:` and `Situation:` are optional. Leave out whichever you don't have.
+- Typos are fine. Claude keeps your words exactly and never writes a meaning for you.
+
+**Save the file outside this folder** — your Desktop is fine. This folder goes to a
+public repository, and the file is full of your phrases.
+
+Then tell Claude where the file is. You'll get back a backup file to load with
+**Restore** in the Words tab, and a question: everything due tonight, or about 10 a
+night?
+
+Load it into the copy of the app you'll use every night. If the app isn't on your
+phone yet, do that first, or the phrases land in the wrong copy.
+
+---
+
+## The design mockup
+
+`mockup/index.html` shows proposed design changes with sample phrases. It never saves
+anything. It's online at https://eng-phrases.vercel.app — on the laptop you see the
+three screens side by side, on the iPhone it runs full-screen.
+
+It isn't the app, so don't add it to your home screen. To change it, ask Claude.
+
+---
+
 ## Using Claude Code on this
 
 From the project folder:
@@ -126,6 +170,12 @@ claude
 
 `CLAUDE.md` loads automatically every session — you don't need to paste anything.
 Just describe what you want.
+
+**Which model:** use `/model fable` for design questions only — how it looks,
+mockups, critiques — and `/model opus` for everything else. Fable uses your allowance
+much faster. Ask all your design questions in one go, then switch back: the first
+message after each switch costs more, because the new model reads the whole
+conversation again.
 
 Four subagents are already defined in `.claude/agents/` and Claude will reach for
 them when they fit: two read-only researchers (iOS PWA behaviour, GitHub Pages), a

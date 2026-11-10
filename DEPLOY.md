@@ -48,6 +48,16 @@ If that prints nothing, add it first:
 git remote add origin git@github.com:afillioapp/Eng-Phrases.git
 ```
 
+**Before the first push, read this.** Nothing has been pushed yet, and two things
+happen the moment you do:
+
+- **The repository is public**, so everything committed becomes visible. Your phrases
+  aren't in the code, and `.gitignore` keeps backup files out.
+- **Vercel is linked to this repository** and rebuilds on every push to `main`. Left
+  as it is, the first push replaces the design mockup at eng-phrases.vercel.app with
+  the whole project. If the app is going on GitHub Pages as described here, ask Claude
+  to point Vercel at the `mockup/` folder first.
+
 Then push:
 
 ```bash
@@ -167,3 +177,12 @@ or the offline copy can serve the old app.
 **If something breaks badly:** `git checkout .` in the project folder returns the code to the
 last committed state. That never touches your phrases, which are in the browser, not in the
 files.
+
+---
+
+## The design mockup on Vercel
+
+`https://eng-phrases.vercel.app` serves `mockup/index.html`: proposed design changes,
+filled with sample phrases. It never saves anything, so don't add it to your home
+screen or type real phrases into it. It was deployed by hand from the `mockup/`
+folder, and Claude can redeploy it after a change.
