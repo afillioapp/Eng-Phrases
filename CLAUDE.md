@@ -19,7 +19,7 @@ Live: `https://afillioapp.github.io/Eng-Phrases/`
 
 - **Live on GitHub Pages** since 2026-11-10, published from `main` (root folder). Every push to `main` republishes it, usually within 10 minutes. Phrases he saved before then are still in whichever browser he opened `phrasebook.html` in; `DEPLOY.md` steps 1 and 6 move them across.
 - **Vercel serves only the mockup.** Project `eng-phrases` (team Afillio) is linked to this repo with its root directory set to `mockup`, so every push also rebuilds `https://eng-phrases.vercel.app` from that folder alone. Keep the real app off Vercel: a second address would hold a second, separate copy of his phrases.
-- **The repo is public.** A push publishes everything committed, commit author emails included.
+- **The repo is public.** A push publishes everything committed, commit author emails included. Since 2026-11-10 this repo commits with his private GitHub noreply address (set in this repo's `git config user.email` only); the earlier commits still show his work email.
 
 ## Hard constraints — do not violate without asking first
 
