@@ -7,13 +7,19 @@ and Tailwind. `CLAUDE.md` makes "single HTML file, no React, no bundler, no runt
 dependencies" a hard constraint, so whatever comes back cannot be dropped into
 `phrasebook.html`. Treat the output as a sketch to steal ideas from.
 
-Two things deliberately written into the prompt, because without them every AI
+A working mockup of the current design proposals, built to the same rules, is in
+`mockup/index.html` and online at https://eng-phrases.vercel.app.
+
+Three things deliberately written into the prompt, because without them every AI
 builder drifts the same way:
 
 - It states that the two-outcome scheduling rule is **intentional** and must not be
   "improved" into SM-2, ease factors or a confidence slider.
 - It gives the **exact hex tokens** from the app's `:root`, so what comes back is
   comparable to what already exists rather than a different app in a different palette.
+- It states the iOS rules the way iOS applies them: inputs at **16px or larger**, and
+  44px as the **touch area**, not the drawn size. Builders take "exactly 16px" and
+  "44x44" literally and draw every chip 44px tall.
 
 ---
 
@@ -39,8 +45,9 @@ TWO HALVES
    Saving with only the phrase filled in must work. Often there's only time for that.
 
 2. REVIEW — a nightly flashcard deck.
-   - Shows the phrase alone, face down. Tap anywhere on the card to reveal the
-     meaning and the situation underneath.
+   - Shows the phrase alone. Tap anywhere on the card to reveal the meaning and the
+     situation underneath. The answer fades in below the phrase, and the phrase
+     itself stays where it is. No 3D flip.
    - Once revealed, two buttons only: "Didn't know" and "Knew it".
    - A thin progress bar and a quiet "3 of 11" counter.
    - When the deck is empty: a calm done state, plus an option to practise all
@@ -72,10 +79,14 @@ VISUAL LANGUAGE — this is the part I care most about
      raised surface  #252836
      borders         #31344a
      text            #eef0f7
+     softer text     #d5d9ec   (a meaning under its phrase)
      muted text      #9aa0b8
      accent (indigo) #7c8cff
      positive        #3ecf8e
      warning (amber) #ffb454
+     danger (red)    #ff7a7a   (Delete only)
+   Text on a coloured fill, such as a button or the badge, is a near-black tint of
+   that colour, never pure black.
    Corner radius 14px, 20px on the flashcard. System font stack
    (-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif).
 
@@ -84,8 +95,9 @@ VISUAL LANGUAGE — this is the part I care most about
    line icons in the style of iOS SF Symbols — about 1.9px stroke, rounded caps.
 
 IPHONE CONSTRAINTS — treat these as hard requirements
-   - Every tappable thing at least 44x44px.
-   - Every text input at font-size exactly 16px, or iOS zooms the page on focus.
+   - Every tappable thing has a touch area of at least 44x44px. The visible shape
+     can be smaller — don't draw chips and pills 44px tall.
+   - Every text input at font-size 16px or larger, or iOS zooms the page on focus.
    - Respect safe-area insets top and bottom (notch and home indicator). Content
      runs full-bleed under the status bar.
    - Must look right at 375px wide. Long unbroken words must wrap, never scroll
@@ -106,5 +118,5 @@ Data shape, for reference:
    Dates are LOCAL calendar dates, never UTC — a phrase saved at 11pm belongs to
    that day, not the next one.
 
-Show me the Add screen, the Review screen mid-flip, and the Words list with a tag
-filter active.
+Show me the Add screen, the Review screen with an answer revealed, and the Words
+list with a tag filter active.
