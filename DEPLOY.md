@@ -5,6 +5,10 @@ GitHub account or your phone.
 
 Read step 1 before doing anything else.
 
+**Status, 10 November 2026:** steps 2, 3 and 4 are done. The code is on GitHub and the
+app is live at `https://afillioapp.github.io/Eng-Phrases/`. Do step 1, then go straight
+to step 5.
+
 ---
 
 ## 1. Back up first — you
@@ -48,16 +52,6 @@ If that prints nothing, add it first:
 git remote add origin git@github.com:afillioapp/Eng-Phrases.git
 ```
 
-**Before the first push, read this.** Nothing has been pushed yet, and two things
-happen the moment you do:
-
-- **The repository is public**, so everything committed becomes visible. Your phrases
-  aren't in the code, and `.gitignore` keeps backup files out.
-- **Vercel is linked to this repository** and rebuilds on every push to `main`. Left
-  as it is, the first push replaces the design mockup at eng-phrases.vercel.app with
-  the whole project. If the app is going on GitHub Pages as described here, ask Claude
-  to point Vercel at the `mockup/` folder first.
-
 Then push:
 
 ```bash
@@ -77,7 +71,8 @@ git push -u origin main
 
 ## 3. Turn on GitHub Pages — you
 
-This part is clicking in a web browser. It cannot be done from Terminal.
+**Already done** — Claude switched it on from Terminal with GitHub's command-line tool.
+The steps below are for doing it by hand, if it ever needs redoing.
 
 1. Go to `https://github.com/afillioapp/Eng-Phrases`
 2. Click **Settings** — the tab along the top of the repository, *not* your account settings.
@@ -184,5 +179,6 @@ files.
 
 `https://eng-phrases.vercel.app` serves `mockup/index.html`: proposed design changes,
 filled with sample phrases. It never saves anything, so don't add it to your home
-screen or type real phrases into it. It was deployed by hand from the `mockup/`
-folder, and Claude can redeploy it after a change.
+screen or type real phrases into it. Vercel rebuilds it from the `mockup/` folder on
+every push. The real app is deliberately not on Vercel: a second address would hold a
+second, separate copy of your phrases.

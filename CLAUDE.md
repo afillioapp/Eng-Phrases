@@ -13,13 +13,13 @@ Single user, on an iPhone and a laptop. No one else will ever use it.
 Alireza is comfortable in Terminal but is not a developer. When he needs to do something himself, be explicit and assume nothing. Explain trade-offs in plain language.
 
 Repo: `git@github.com:afillioapp/Eng-Phrases.git` (public)
-Planned home: `https://afillioapp.github.io/Eng-Phrases/`
+Live: `https://afillioapp.github.io/Eng-Phrases/`
 
 ## Where things stand
 
-- **Not live anywhere yet.** As of 2026-11-10 nothing has ever been pushed: the GitHub repo is empty, Pages is off, and the URL above returns 404. His phrases exist only in whichever browser he has opened `phrasebook.html` in.
-- **Vercel is linked to this repo.** Project `eng-phrases` (team Afillio, production branch `main`, root directory unset) serves the design mockup at `https://eng-phrases.vercel.app`, deployed by hand from `mockup/`. Because of the link, the first push to `main` would make Vercel build the repo root and replace the mockup with the app.
-- **Before the first push,** settle with Alireza where the real app lives — GitHub Pages as `DEPLOY.md` plans, or Vercel — and set Vercel's root directory to match. Remind him the repo is public: a push publishes everything committed.
+- **Live on GitHub Pages** since 2026-11-10, published from `main` (root folder). Every push to `main` republishes it, usually within 10 minutes. Phrases he saved before then are still in whichever browser he opened `phrasebook.html` in; `DEPLOY.md` steps 1 and 6 move them across.
+- **Vercel serves only the mockup.** Project `eng-phrases` (team Afillio) is linked to this repo with its root directory set to `mockup`, so every push also rebuilds `https://eng-phrases.vercel.app` from that folder alone. Keep the real app off Vercel: a second address would hold a second, separate copy of his phrases.
+- **The repo is public.** A push publishes everything committed, commit author emails included.
 
 ## Hard constraints — do not violate without asking first
 
@@ -126,14 +126,13 @@ Give each subagent enough context to work alone — they start cold. Run indepen
 
 Ask Alireza before acting on any of these.
 
-- **Where the real app lives** — GitHub Pages or Vercel. Blocks the first push (see Where things stand).
 - **The known-phrases bug** — fixing it changes the nightly deck (see Data model).
 - **Practice-mode grading.** "Practice all" reschedules every card it grades, so a known phrase marked "Didn't know" in practice comes back tomorrow. Keep that, or give practice cards a plain "Next" and leave scheduling alone.
 - **A real redesign.** The mockup kept the settled look and changed only how things work; he found the difference too small. A visibly new look means relaxing "Don't redesign it" — his call, and a job for Fable.
 
 ## Backlog
 
-1. **Import ~200 phrases from WhatsApp — waiting on his file.** He is copying them into a Word file in the format given in `START-HERE.md`: line 1 the phrase, optional `Meaning:` and `Situation:` lines, a blank line between phrases. Convert it to backup-format JSON so the existing **Restore** imports it with no app change: `Situation:` goes in `source`, `status: "new"`, `seen: 0`, and deterministic ids so restoring twice adds nothing. Keep his text exactly, typos included, and never write a meaning for him. Ask whether everything is due tonight or spread out (suggested: 10 a night, oldest first — this sets first due dates only, not the rule). The file and the JSON hold his phrases, so keep both out of the public repo; name the JSON `phrasebook-….json` so `.gitignore` catches it. Import into the copy he uses nightly, which means getting the app online and on his phone first.
+1. **Import ~200 phrases from WhatsApp — waiting on his file.** He is copying them into a Word file in the format given in `START-HERE.md`: line 1 the phrase, optional `Meaning:` and `Situation:` lines, a blank line between phrases. Convert it to backup-format JSON so the existing **Restore** imports it with no app change: `Situation:` goes in `source`, `status: "new"`, `seen: 0`, and deterministic ids so restoring twice adds nothing. Keep his text exactly, typos included, and never write a meaning for him. Ask whether everything is due tonight or spread out (suggested: 10 a night, oldest first — this sets first due dates only, not the rule). The file and the JSON hold his phrases, so keep both out of the public repo; name the JSON `phrasebook-….json` so `.gitignore` catches it. Import into the copy he uses nightly: the home-screen install from the Pages URL, so it needs installing first.
 2. **Tags — designed, not built.** One tag per phrase, stored as a `tag` string on the item, empty allowed. Picked by tapping a chip from tags already used, plus a "+ New" that reveals a text input. Rendered as **text chips in the existing pill style — not emoji, not icons.** Used to filter the Words tab only; reviewing one tag at a time was considered and deliberately dropped for now. Chips in the Add form and the filter row are tappable, so they need the 44px minimum.
 3. **Save with an empty meaning.** Already works — only `phrase` is required. What's missing is marking such entries incomplete and adding a "needs meaning" filter in the Words tab.
 4. **Relabel `source`.** The field is labelled "Where I heard it" but what he actually writes is the social situation ("chatting with someone I was trying to get to know"). The label and placeholder should ask for that. The stored key stays `source` so old backups keep importing.

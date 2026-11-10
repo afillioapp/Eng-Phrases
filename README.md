@@ -7,9 +7,8 @@ captures it with his own definition plus a note about the situation he heard it 
 the context is what makes it stick. At night he opens the Review tab and flips
 through flashcards.
 
-Planned home: **https://afillioapp.github.io/Eng-Phrases/**. **Not live yet** — the
-code has never been pushed to GitHub, so there is nothing there to serve. See
-[DEPLOY.md](DEPLOY.md).
+Live at **https://afillioapp.github.io/Eng-Phrases/**. To put it on your iPhone,
+follow [DEPLOY.md](DEPLOY.md).
 
 A design mockup with sample phrases is at **https://eng-phrases.vercel.app**. It's
 for looking at: it never saves anything.

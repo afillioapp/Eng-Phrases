@@ -1,7 +1,8 @@
 # Working on this in VS Code
 
-Most of the setup is done — git is initialised, the app is a working PWA, and there's
-a test suite. **What's left is getting it online: step 4.**
+The setup is done — git is initialised, the app is a working PWA with a test suite,
+and it's live at https://afillioapp.github.io/Eng-Phrases/. **What's left is putting
+it on your iPhone:** [DEPLOY.md](DEPLOY.md), step 1 and then steps 5–7.
 
 ---
 
@@ -36,42 +37,15 @@ npm test
 You should see `pass 34`. If you don't, something is wrong before you've even
 started — say so.
 
-### 4. Push it to GitHub — not done yet
+### 4. Push it to GitHub and switch on Pages — done
 
-The GitHub address is already connected (`git remote -v` prints `origin`), but
-nothing has ever been pushed. The repository on GitHub is still empty, so the app
-isn't online anywhere.
+Done on 10 November 2026. The code is on GitHub and the app is live at
+https://afillioapp.github.io/Eng-Phrases/. Vercel is set to build only the design
+mockup, so the real app has exactly one address. From here, every push publishes —
+see Day to day.
 
-**Before your first push, know two things:**
-
-- **The repository is public.** Everything you commit becomes visible to anyone.
-  Your phrases aren't in the code, and `.gitignore` keeps backup files out.
-- **Vercel is linked to the repository** and rebuilds on every push. Left as it is,
-  your first push replaces the design mockup at eng-phrases.vercel.app with the whole
-  project. Decide where the real app should live — GitHub Pages, as
-  [DEPLOY.md](DEPLOY.md) describes, or Vercel — and ask Claude to set Vercel up to
-  match before you push.
-
-Then push:
-
-```bash
-git push -u origin main
-```
-
-If the push fails with a permission or "Host key verification" error, your Mac has
-no SSH key for GitHub. The easy way round it is HTTPS — it'll ask for your username
-and a personal access token:
-
-```bash
-git remote set-url origin https://github.com/afillioapp/Eng-Phrases.git
-```
-
-```bash
-git push -u origin main
-```
-
-If the app is going on GitHub Pages, follow [DEPLOY.md](DEPLOY.md) next to switch
-Pages on and install the app on your phone.
+**The repository is public.** Everything you commit becomes visible to anyone. Your
+phrases aren't in the code, and `.gitignore` keeps backup files out.
 
 ---
 
@@ -101,8 +75,8 @@ git commit -m "What changed and why"
 git push
 ```
 
-Once the app is online, a push republishes it. Allow up to 10 minutes. Vercel also
-rebuilds on every push.
+A push republishes the app. Allow up to 10 minutes. Vercel also rebuilds the mockup
+on every push.
 
 ---
 
@@ -145,8 +119,9 @@ Then tell Claude where the file is. You'll get back a backup file to load with
 **Restore** in the Words tab, and a question: everything due tonight, or about 10 a
 night?
 
-Load it into the copy of the app you'll use every night. If the app isn't on your
-phone yet, do that first, or the phrases land in the wrong copy.
+Load it into the copy of the app you'll use every night: the one on your iPhone's
+home screen. If it isn't installed yet, do that first ([DEPLOY.md](DEPLOY.md), step
+5), or the phrases land in the wrong copy.
 
 ---
 
