@@ -36,10 +36,21 @@ deliberately excludes `phrasebook-*.json` so your phrases never get published.
 
 ## 2. Push the code to GitHub
 
-If the push has already been done for you, skip to step 3.
+Check whether the remote is set up:
 
 ```bash
-cd "$HOME/Documents/Business/Eng Phrases"
+cd "$HOME/Documents/Business/Eng Phrases" && git remote -v
+```
+
+If that prints nothing, add it first:
+
+```bash
+git remote add origin git@github.com:afillioapp/Eng-Phrases.git
+```
+
+Then push:
+
+```bash
 git push -u origin main
 ```
 

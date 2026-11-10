@@ -1,8 +1,11 @@
-# Kickoff prompt
+# Kickoff prompt — historical
 
-Copy everything below the line and paste it as your first message to Claude Code.
+**This task is done.** The PWA work described below shipped: manifest, service
+worker, icons, GitHub Pages setup, and the jsdom test harness. Kept only as a record
+of how the work was framed.
 
-(Make sure you've run `/model opus` first — see `START-HERE.md`.)
+You don't need to paste this again. `CLAUDE.md` loads automatically every session —
+just describe what you want. See [START-HERE.md](START-HERE.md).
 
 ---
 
