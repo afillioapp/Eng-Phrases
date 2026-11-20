@@ -37,8 +37,13 @@ function installFakeClock(window, fixedNowMs) {
  *   app's inline script runs, so it boots as if this were already on disk.
  * @param {number} [opts.fakeNowMs] - if set, installs the fake clock in
  *   beforeParse, i.e. before the app's script reads the clock at load.
+ * @param {object} [opts.storage] - extra localStorage entries {key: string}
+ *   written before the app's script runs (e.g. a saved sync key).
+ * @param {Function} [opts.fetch] - installed as window.fetch before the app
+ *   script runs (jsdom has no fetch of its own).
+ * @param {Function} [opts.confirm] - installed as window.confirm.
  */
-function loadApp({ seedItems, fakeNowMs } = {}) {
+function loadApp({ seedItems, fakeNowMs, storage, fetch, confirm } = {}) {
   const dom = new JSDOM(HTML, {
     url: 'http://localhost/',
     runScripts: 'dangerously',
@@ -51,6 +56,9 @@ function loadApp({ seedItems, fakeNowMs } = {}) {
       window.HTMLAnchorElement.prototype.click = function () {};
       if (fakeNowMs !== undefined) installFakeClock(window, fakeNowMs);
       if (seedItems) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seedItems));
+      if (storage) for (const k of Object.keys(storage)) window.localStorage.setItem(k, storage[k]);
+      if (fetch) window.fetch = fetch;
+      if (confirm) window.confirm = confirm;
     }
   });
   return dom;
