@@ -27,7 +27,7 @@ Live: `https://afillioapp.github.io/Eng-Phrases/`
 - **No backend, no accounts, no sync, no analytics.** `localStorage` only.
 - **No AI features and no dictionary API.** Alireza writes every definition himself in his own words — that is the entire point of the app. No auto-lookup, auto-translation, or generated example sentences.
 - **No spaced-repetition algorithm.** The rule is deliberately simple: knew it → gone for 30 days, didn't know → back tomorrow. Do not upgrade it to SM-2 or Anki-style intervals.
-- **Don't redesign it.** The visual language is settled — match what's already in the file.
+- **Keep the visual language.** Redesigned on 2026-11-20 from a reference Alireza chose: warm cream by day, warm dark by night, serif phrases, generous spacing, one task per screen. Match what's in the file; don't drift back toward dense layouts.
 - **No emoji, illustrations, gradients, or drop shadows.**
 
 If one of these seems wrong, say so and make the argument. Don't silently work around it.
@@ -59,9 +59,11 @@ Dates are local-timezone `YYYY-MM-DD` strings, never UTC — a phrase saved at 1
 
 ## Design
 
-Tokens are defined in the file's `:root`. Dark and low-light because the app is used in bed. System font stack, 44px minimum touch targets (the drawn shape can be smaller), inputs at 16px or larger so iOS doesn't zoom on focus, safe-area insets respected top and bottom.
+Tokens are defined in `:root`, with a dark set under `prefers-color-scheme: dark`. The app follows the phone's appearance, so the bedtime review is dark when Appearance is set to Automatic. Serif (`ui-serif`, New York on iPhone) for phrases and situations, system sans for everything else. 44px minimum touch targets (the drawn shape can be smaller), inputs at 16px or larger so iOS doesn't zoom on focus, safe-area insets respected top and bottom.
 
-`body` must **not** set `padding-bottom: env(safe-area-inset-bottom)` — `nav` is the last flex child and reserves it already. Having both leaves dead space under the nav in standalone mode. The toast's `bottom` offsets include the inset for the same reason.
+**Monotask:** each screen does one job, and he asked for exactly that. Add is the phrase box plus two quiet fields, with Save in the top bar where the keyboard can't cover it. Words is a grouped list where a row shows the phrase and one line of meaning, and tapping it opens everything plus the actions. Review is one card that fills the screen, with the phrase fixed in place and the two equal-weight answers pinned low. Resist adding elements to any screen.
+
+`body` must **not** set `padding-bottom: env(safe-area-inset-bottom)` — `nav` is the last flex child and reserves it already. Having both leaves dead space under the nav in standalone mode. The toast sits at the top, offset by the top inset, so the keyboard can't hide it.
 
 ## Files
 
@@ -101,7 +103,7 @@ Small, reviewable commits: one logical change each, with a message saying what c
 
 Search the web rather than reinventing solved problems — especially service workers, manifests, iOS home-screen PWA quirks, and `localStorage` eviction on iOS Safari. That area is full of stale and wrong advice, so prefer official sources (MDN, web.dev, Apple's WebKit blog), check dates, and flag when sources conflict. Adapt findings to this codebase's style rather than pasting them in, and never add a library for something that's twenty lines of vanilla JS.
 
-Two findings worth not re-litigating: `apple-mobile-web-app-capable` and `status-bar-style: black-translucent` are **not** meaningfully deprecated for iOS — the widespread claim traces to a single 2017 forum post — and `black-translucent` is what the header's `env(safe-area-inset-top)` padding is written for. Apple documents that home-screen web apps get their own storage-eviction counter, separate from Safari's 7-day cap, but words it as expectation rather than guarantee. Backups stay load-bearing.
+Worth not re-litigating: `apple-mobile-web-app-capable` is **not** meaningfully deprecated for iOS — the widespread claim traces to a single 2017 forum post. Since the redesign, `status-bar-style` is `default`, not `black-translucent`, because the light theme needs dark status-bar text and `black-translucent` draws it white. Research on 2026-11-20 found no primary source for how `default` looks in dark mode, whether `theme-color` affects an installed app's status bar, or whether an installed icon picks up changed tags without being re-added. All three are unverified on a device. Apple documents that home-screen web apps get their own storage-eviction counter, separate from Safari's 7-day cap, but words it as expectation rather than guarantee. Backups stay load-bearing.
 
 **Models.** Alireza uses Fable 5.2 only for design input — critiques, mockups — and Opus 5.5 for everything else, because Fable drains his allowance. On Fable, stay on design and remind him to switch back with `/model opus`. Subagents stay on Sonnet.
 
@@ -128,7 +130,7 @@ Ask Alireza before acting on any of these.
 
 - **The known-phrases bug** — fixing it changes the nightly deck (see Data model).
 - **Practice-mode grading.** "Practice all" reschedules every card it grades, so a known phrase marked "Didn't know" in practice comes back tomorrow. Keep that, or give practice cards a plain "Next" and leave scheduling alone.
-- **A real redesign.** The mockup kept the settled look and changed only how things work; he found the difference too small. A visibly new look means relaxing "Don't redesign it" — his call, and a job for Fable.
+- **Sync between iPhone and laptop.** He chose sync over the no-backend rule. The proposal is a private GitHub repo as the store, with a Sync button, an access key pasted once per device, newest edit wins, and deleted phrases remembered. It's waiting on his go-ahead. Building it means rewriting the "No backend, no sync" constraint first.
 
 ## Backlog
 
@@ -136,16 +138,7 @@ Ask Alireza before acting on any of these.
 2. **Tags — designed, not built.** One tag per phrase, stored as a `tag` string on the item, empty allowed. Picked by tapping a chip from tags already used, plus a "+ New" that reveals a text input. Rendered as **text chips in the existing pill style — not emoji, not icons.** Used to filter the Words tab only; reviewing one tag at a time was considered and deliberately dropped for now. Chips in the Add form and the filter row are tappable, so they need the 44px minimum.
 3. **Save with an empty meaning.** Already works — only `phrase` is required. What's missing is marking such entries incomplete and adding a "needs meaning" filter in the Words tab.
 4. **Relabel `source`.** The field is labelled "Where I heard it" but what he actually writes is the social situation ("chatting with someone I was trying to get to know"). The label and placeholder should ask for that. The stored key stays `source` so old backups keep importing.
-5. **Design proposals from the mockup — not decided.** All shown working in `mockup/index.html`. Each stands alone: port one per commit, and keep the mockup's sample data out of the app.
-   - Save in the header on Add, where the keyboard can't cover it, with the "Saved" confirmation there too — a bottom toast sits behind the keyboard.
-   - The phrase field as the largest text, growing with what's typed; all three fields start one line tall.
-   - Grade buttons of equal weight (both outlined), pinned to the bottom of the screen. The answer fades in and the phrase doesn't move.
-   - Undo after each grade.
-   - "Add meaning" in place of the grade buttons when a card has no meaning.
-   - The backup reminder at the top of Words when a backup is overdue.
-   - Delete confirmed on the button itself instead of `confirm()`.
-   - Pressed states on tabs, cards and chips.
-   - Phrases and situations in the system serif (New York on iPhone). This changes the look, so it needs his OK under "Don't redesign it".
+5. **Remaining design proposals from the mockup — not decided.** The redesign already took Save in the top bar, the large growing phrase box, equal-weight answers pinned low, a phrase that doesn't move, serif type and pressed states. Still only in `mockup/index.html` (which keeps the old dark look): Undo after each grade, "Add meaning" instead of the grade buttons when a card has no meaning, the backup reminder at the top of Words when overdue, and Delete confirmed on the button instead of `confirm()`. Port one per commit.
 6. **Reverse cards.** Show the definition, recall the phrase.
 7. **Pronunciation.** Read the phrase aloud with the browser's built-in `speechSynthesis`. No external API.
 8. **Light stats.** Nightly streak, how many marked known this week, which phrases keep getting failed.
