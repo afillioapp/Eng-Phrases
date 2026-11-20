@@ -4,8 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#12131a">
+<!-- "default", not "black-translucent": the light theme needs dark status-bar
+     text, and black-translucent draws it white. The cost is that content no
+     longer runs under the status bar. How "default" looks in dark mode on a
+     real iPhone is unverified; see CLAUDE.md. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#eee9e0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161412" media="(prefers-color-scheme: dark)">
 <!-- All relative: this is served from a subpath (/Eng-Phrases/) on GitHub
      Pages, so anything absolute would resolve off the site. iOS gives
      apple-touch-icon priority over the manifest's icons, and applies its own
@@ -15,160 +21,222 @@
 <link rel="icon" href="icons/icon-32.png" sizes="32x32" type="image/png">
 <title>Phrasebook</title>
 <style>
+  /* Light by day, dark by night: the palette follows the phone's appearance
+     setting, so with Appearance on Automatic the bedtime review is dark.
+     Flat fills and 1px borders only: no shadows, no gradients. */
   :root{
-    --bg:#12131a; --surface:#1c1e28; --surface2:#252836;
-    --line:#31344a; --text:#eef0f7; --muted:#9aa0b8;
-    --accent:#7c8cff; --good:#3ecf8e; --warn:#ffb454;
-    --r:14px;
+    color-scheme:light dark;
+    --bg:#eee9e0; --surface:#faf8f4; --surface2:#e5dfd4; --line:#ddd5c8;
+    --text:#1c1a17; --text2:#3d3933; --muted:#6b645a;
+    --good:#2f7a4f; --good-line:#b9d4c2;
+    --warn:#9a5716; --warn-line:#e2c9a8;
+    --danger:#a63d2b;
+    --on-text:#faf8f4; --badge:#a85f15; --on-badge:#ffffff;
+    --serif:ui-serif,"New York","Iowan Old Style",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --r:16px; --R:22px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#161412; --surface:#211e1b; --surface2:#2d2925; --line:#36312b;
+      --text:#eee8dd; --text2:#d2cabd; --muted:#9c9488;
+      --good:#79c495; --good-line:#2f5a40;
+      --warn:#e3a35a; --warn-line:#5e4322;
+      --danger:#ec8f7e;
+      --on-text:#161412; --badge:#e3a35a; --on-badge:#1d1206;
+    }
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%}
+  [hidden]{display:none!important}
+  html,body{margin:0;height:100%;background:var(--bg)}
   body{
-    background:var(--bg);color:var(--text);
-    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex;flex-direction:column;
+    color:var(--text);font:16px/1.5 var(--sans);
+    display:flex;flex-direction:column;-webkit-text-size-adjust:100%;
     /* No bottom safe-area inset here: nav is the last flex child and reserves
        it itself, so having it on both left a dead strip under the nav bar in
        standalone mode. overflow-wrap inherits, so one rule keeps a long
        unbroken phrase from pushing the card sideways. */
     overflow-wrap:break-word;
   }
-  header{
-    padding:calc(14px + env(safe-area-inset-top)) 18px 12px;
-    display:flex;align-items:baseline;justify-content:space-between;
-    border-bottom:1px solid var(--line);
+  button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0;border-radius:var(--r);touch-action:manipulation}
+  button:focus-visible,.flash:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+
+  main{
+    flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    display:flex;flex-direction:column;
+    padding:calc(12px + env(safe-area-inset-top)) 20px 24px;
   }
-  header h1{font-size:18px;margin:0;letter-spacing:.3px}
-  header span{font-size:13px;color:var(--muted)}
-  main{flex:1;overflow-y:auto;padding:18px;-webkit-overflow-scrolling:touch}
   .panel{display:none}
   .panel.on{display:block}
 
-  label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px 2px}
-  input,textarea{
-    width:100%;background:var(--surface);border:1px solid var(--line);
-    color:var(--text);border-radius:var(--r);padding:13px 14px;
-    font:inherit;font-size:16px;outline:none;resize:vertical;
-  }
-  input:focus,textarea:focus{border-color:var(--accent)}
-  .field{margin-bottom:16px}
-  .hint{font-size:12px;color:var(--muted);margin:6px 2px 0}
+  /* One quiet row at the top of each screen: what this screen is for, and
+     at most one action. */
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;margin-bottom:18px}
+  .lead{display:flex;align-items:center;gap:14px;min-width:0}
+  .label{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .count{font-size:13px;color:var(--muted)}
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .primary{min-height:44px;padding:0 22px;border-radius:999px;background:var(--text);color:var(--on-text);font-weight:600;font-size:16px}
+  .link{min-height:44px;padding:0 2px;color:var(--muted);font-size:16px}
+  .primary:active,.btn:active,.link:active{opacity:.7}
 
-  button{font:inherit;cursor:pointer;border:none;border-radius:var(--r)}
-  .btn{
-    width:100%;padding:15px;background:var(--accent);color:#0f1020;
-    font-weight:650;font-size:16px;
+  /* ---------- add ---------- */
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--R)}
+  .box:focus-within{border-color:var(--muted)}
+  textarea,input{
+    display:block;width:100%;margin:0;border:none;background:none;color:var(--text);
+    font:inherit;font-size:16px;outline:none;resize:none;-webkit-appearance:none;appearance:none;
   }
-  .btn:active{opacity:.8}
-  .btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
-  .row{display:flex;gap:10px}
-  .row>*{flex:1}
+  textarea{overflow:hidden}
+  ::placeholder{color:var(--muted);opacity:.75}
+  .phrase{padding:22px 20px 26px;min-height:140px}
+  #f-phrase{font:600 26px/1.3 var(--serif);letter-spacing:-.01em}
+  .fields{margin-top:14px}
+  .fields .row{padding:14px 20px 16px}
+  .fields .row+.row{border-top:1px solid var(--line)}
+  .fields label{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .fields textarea{font-size:17px;line-height:1.45}
+  .hint{font-size:13px;color:var(--muted);margin:14px 4px 0}
 
+  /* Shown at the top so it isn't hidden behind the keyboard. */
   .toast{
-    position:fixed;left:50%;transform:translateX(-50%);
-    bottom:calc(88px + env(safe-area-inset-bottom));
-    background:var(--good);color:#06210f;padding:10px 18px;border-radius:999px;
-    font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:20;
+    position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));
+    transform:translate(-50%,-6px);background:var(--text);color:var(--on-text);
+    padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;
   }
-  /* Offsets include the inset, or the toast lands on the nav row itself once
-     there is no browser chrome below it. */
-  .toast.on{opacity:1;bottom:calc(96px + env(safe-area-inset-bottom))}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
 
-  .card{
-    background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
-    padding:14px 15px;margin-bottom:10px;
-  }
-  .card .p{font-weight:650;font-size:17px}
-  .card .m{color:#d5d9ec;margin-top:5px}
-  .card .s{color:var(--muted);font-size:13px;margin-top:7px;font-style:italic}
-  .meta{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--muted)}
-  .pill{padding:2px 9px;border-radius:999px;background:var(--surface2);border:1px solid var(--line)}
-  .pill.known{color:var(--good);border-color:#28613f}
-  .pill.due{color:var(--warn);border-color:#6b4b17}
-  .acts{display:flex;gap:8px;margin-top:12px}
-  .acts button{flex:1;padding:9px;min-height:44px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:13px}
-  .acts button.del{color:#ff7a7a}
+  /* ---------- words ---------- */
+  .search{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:12px 18px;margin-bottom:22px}
+  .search:focus{border-color:var(--muted)}
+  .group{background:var(--surface);border:1px solid var(--line);border-radius:var(--R);overflow:hidden}
+  .card{padding:16px 20px;cursor:pointer}
+  .card+.card{border-top:1px solid var(--line)}
+  .card:not(.open):active{background:var(--surface2)}
+  .card.open{cursor:default}
+  .card .top{display:flex;align-items:baseline;justify-content:space-between;gap:14px}
+  .card .p{font:600 19px/1.3 var(--serif);min-width:0}
+  .card .m{color:var(--text2);font-size:15px;margin-top:4px}
+  .card:not(.open) .m{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .s{font:italic 15px/1.45 var(--serif);color:var(--muted);margin-top:10px}
+  .pill{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
+  .pill.due{color:var(--warn)}
+  .pill.known{color:var(--good)}
+  .meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:12px}
+  .acts{display:flex;gap:6px;margin-top:14px}
+  .acts button{flex:1;min-height:44px;padding:0 4px;background:var(--surface2);border-radius:12px;color:var(--text);font-size:13px;font-weight:500;white-space:nowrap}
+  .acts button:active{opacity:.7}
+  .acts .del{color:var(--danger)}
 
-  .empty{text-align:center;color:var(--muted);padding:48px 20px;font-size:15px}
-  .empty b{display:block;color:var(--text);font-size:17px;margin-bottom:8px}
+  .empty{text-align:center;color:var(--muted);padding:56px 24px;font-size:15px}
+  .empty b{display:block;color:var(--text);font:600 22px/1.3 var(--serif);margin-bottom:8px}
 
-  /* review */
-  .prog{height:4px;background:var(--surface2);border-radius:9px;overflow:hidden;margin-bottom:18px}
-  .prog i{display:block;height:100%;background:var(--accent);width:0;transition:.3s}
+  .backup{margin-top:44px}
+  .backup .label{display:block;margin:0 4px 6px}
+  .backup .hint{margin:0 4px 14px}
+  .two{display:flex;gap:10px}
+  .two>*{flex:1}
+  .btn{display:block;width:100%;min-height:50px;padding:0 16px;border-radius:var(--r);font-weight:600;font-size:16px}
+  .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--text)}
+
+  /* ---------- review ---------- */
+  /* One card fills the screen. The answers sit at the bottom, under the thumb. */
+  #p-review.on{display:flex;flex-direction:column;flex:1}
+  #review-body{flex:1;display:flex;flex-direction:column}
+  .rtop{display:flex;align-items:center;gap:14px;min-height:44px;margin-bottom:14px}
+  .prog{flex:1;height:3px;background:var(--surface2);border-radius:9px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--text);width:0;transition:width .3s}
   .flash{
-    background:var(--surface);border:1px solid var(--line);border-radius:20px;
-    min-height:230px;padding:26px 22px;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;text-align:center;cursor:pointer;
+    flex:1;min-height:300px;background:var(--surface);border:1px solid var(--line);border-radius:26px;
+    padding:0 26px 26px;display:flex;flex-direction:column;text-align:center;cursor:pointer;
   }
-  .flash .q{font-size:26px;font-weight:650;line-height:1.35}
-  .flash .tap{color:var(--muted);font-size:13px;margin-top:18px}
-  .flash .a{margin-top:18px;padding-top:18px;border-top:1px solid var(--line);width:100%}
-  .flash .a .m{font-size:17px;color:#d9dcef}
-  .flash .a .s{font-size:14px;color:var(--muted);font-style:italic;margin-top:12px}
-  .grade{display:flex;gap:10px;margin-top:16px}
-  .grade button{flex:1;padding:16px;font-weight:600;font-size:15px}
-  .grade .no{background:var(--surface2);color:var(--warn);border:1px solid #6b4b17}
-  .grade .yes{background:var(--good);color:#06210f}
+  /* The phrase sits a fixed distance from the top of the card, so it stays
+     put when the answer appears beneath it. */
+  .flash::before{content:"";flex:none;height:clamp(48px,14vh,120px)}
+  .flash .q{font:600 30px/1.25 var(--serif);letter-spacing:-.01em}
+  .flash .q.long{font-size:24px}
+  .flash .tap{color:var(--muted);font-size:13px;margin-top:22px}
+  .flash .a{margin-top:24px;padding-top:22px;border-top:1px solid var(--line);animation:fade .2s ease-out}
+  .flash .a .m{font-size:18px;line-height:1.5;color:var(--text2)}
+  .flash .a .s{font:italic 16px/1.5 var(--serif);color:var(--muted);margin-top:14px}
+  .none{color:var(--muted)}
+  /* The empty spacer holds the buttons' place before the reveal, so the card
+     doesn't change size when they appear. */
+  .grade,.grade-space{flex:none;display:flex;gap:10px;margin-top:14px;min-height:58px}
+  .grade button{flex:1;min-height:58px;border-radius:18px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:16px}
+  .grade button:active{background:var(--surface2)}
+  .grade .no{color:var(--warn);border-color:var(--warn-line)}
+  .grade .yes{color:var(--good);border-color:var(--good-line)}
+  .done{margin:auto 0;padding:24px 0}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
 
+  /* ---------- tab bar ---------- */
   nav{
-    display:flex;border-top:1px solid var(--line);background:var(--surface);
-    padding-bottom:env(safe-area-inset-bottom);
+    flex:none;display:flex;gap:4px;padding:5px;
+    margin:0 16px calc(10px + env(safe-area-inset-bottom));
+    background:var(--surface);border:1px solid var(--line);border-radius:26px;
   }
   nav button{
-    flex:1;background:none;color:var(--muted);padding:13px 4px 15px;
-    font-size:12px;border-radius:0;display:flex;flex-direction:column;align-items:center;gap:4px;
+    position:relative;flex:1;min-height:54px;border-radius:21px;color:var(--muted);
+    font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   }
   nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-  nav button.on{color:var(--accent)}
+  nav button.on{background:var(--surface2);color:var(--text)}
   nav .badge{
-    position:absolute;transform:translate(15px,-4px);background:var(--warn);color:#2a1a00;
-    font-size:10px;font-weight:700;border-radius:999px;padding:1px 6px;
+    position:absolute;top:6px;left:50%;margin-left:7px;background:var(--badge);color:var(--on-badge);
+    font-size:10px;font-weight:700;line-height:16px;min-width:16px;padding:0 5px;border-radius:999px;
   }
-  .navwrap{position:relative;flex:1;display:flex}
-  .sub{color:var(--muted);font-size:13px;margin:-6px 0 16px 2px}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Phrasebook</h1>
-  <span id="stat"></span>
-</header>
-
 <main>
   <!-- ADD -->
   <section id="p-add" class="panel on">
-    <div class="field">
-      <label for="f-phrase">Phrase, word or slang</label>
-      <input id="f-phrase" autocomplete="off" autocapitalize="none" placeholder="e.g. to bite the bullet">
+    <div class="bar">
+      <div class="lead">
+        <button class="link" id="cancel" hidden>Cancel</button>
+        <span class="label" id="add-label">New phrase</span>
+      </div>
+      <button class="primary" id="save">Save</button>
     </div>
-    <div class="field">
-      <label for="f-meaning">What it means</label>
-      <textarea id="f-meaning" rows="2" placeholder="in your own words"></textarea>
+    <div class="box phrase">
+      <label for="f-phrase" class="vh">Phrase, word or slang</label>
+      <textarea id="f-phrase" rows="1" autocomplete="off" autocapitalize="none" enterkeyhint="next" placeholder="What did you hear?"></textarea>
     </div>
-    <div class="field">
-      <label for="f-source">Where I heard it</label>
-      <textarea id="f-source" rows="2" placeholder="e.g. Sam said it on the standup call about the deadline"></textarea>
-      <p class="hint">The context is what makes it stick. Even 5 words helps.</p>
+    <div class="box fields">
+      <div class="row">
+        <label for="f-meaning">What it means</label>
+        <textarea id="f-meaning" rows="1" placeholder="In your own words"></textarea>
+      </div>
+      <div class="row">
+        <label for="f-source">Where I heard it</label>
+        <textarea id="f-source" rows="1" placeholder="e.g. Sam said it on the standup call"></textarea>
+      </div>
     </div>
-    <button class="btn" id="save">Save</button>
-    <div class="row" id="editrow" style="margin-top:10px;display:none">
-      <button class="btn ghost" id="cancel">Cancel edit</button>
-    </div>
+    <p class="hint">The context is what makes it stick. Even 5 words helps.</p>
   </section>
 
   <!-- WORDS -->
   <section id="p-words" class="panel">
-    <div class="field">
-      <input id="search" placeholder="Search phrases, meanings, context…" autocomplete="off">
+    <div class="bar">
+      <span class="label">Your phrases</span>
+      <span class="count" id="stat"></span>
     </div>
+    <input id="search" class="search" placeholder="Search phrases, meanings, context" autocomplete="off" autocapitalize="none" enterkeyhint="search" aria-label="Search">
     <div id="list"></div>
-    <div class="row" style="margin-top:22px">
-      <button class="btn ghost" id="export">Back up</button>
-      <button class="btn ghost" id="importbtn">Restore</button>
+    <div class="backup">
+      <span class="label">Backup</span>
+      <p class="hint" id="backup-hint">Everything is stored on this device only.</p>
+      <div class="two">
+        <button class="btn ghost" id="export">Back up</button>
+        <button class="btn ghost" id="importbtn">Restore</button>
+      </div>
     </div>
-    <input type="file" id="importfile" accept=".json" style="display:none">
-    <p class="hint" style="text-align:center" id="backup-hint">Everything is stored on this device only.</p>
+    <input type="file" id="importfile" accept=".json" hidden>
   </section>
 
   <!-- REVIEW -->
@@ -178,15 +246,15 @@
 </main>
 
 <nav>
-  <div class="navwrap"><button data-tab="add" class="on">
-    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button></div>
-  <div class="navwrap"><button data-tab="words">
-    <svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Words</button></div>
-  <div class="navwrap"><button data-tab="review">
-    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Review<span class="badge" id="badge" style="display:none"></span></button></div>
+  <button data-tab="add" class="on">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+  <button data-tab="words">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Words</button>
+  <button data-tab="review">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Review<span class="badge" id="badge" style="display:none"></span></button>
 </nav>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
 (function(){
@@ -237,16 +305,33 @@ let tab = "add";
 function go(t){
   tab = t;
   document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "p-"+t));
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  document.querySelectorAll("nav button").forEach(b => {
+    const on = b.dataset.tab === t;
+    b.classList.toggle("on", on);
+    if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
   if (t === "words") renderList();
   if (t === "review") startReview();
-  if (t === "add") setTimeout(()=>$("#f-phrase").focus(), 60);
+  if (t === "add"){ growAll(); setTimeout(()=>$("#f-phrase").focus(), 60); }
   window.scrollTo(0,0); document.querySelector("main").scrollTop = 0;
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => go(b.dataset.tab));
 
 /* ---------- add / edit ---------- */
+const fields = ["#f-phrase", "#f-meaning", "#f-source"].map($);
+/* Boxes start one line tall and grow with what's typed. A hidden box
+   measures 0, so leave its height alone until its tab is showing. */
+const grow = t => { t.style.height = "auto"; const h = t.scrollHeight; t.style.height = h ? (h + 2) + "px" : ""; };
+const growAll = () => fields.forEach(grow);
+fields.forEach(t => t.addEventListener("input", () => grow(t)));
+
 let editingId = null;
+function setEditing(id){
+  editingId = id;
+  $("#save").textContent = id ? "Update" : "Save";
+  $("#cancel").hidden = !id;
+  $("#add-label").hidden = !!id;
+}
 $("#save").onclick = () => {
   const phrase = $("#f-phrase").value.trim();
   const meaning = $("#f-meaning").value.trim();
@@ -256,7 +341,7 @@ $("#save").onclick = () => {
   if (editingId){
     const it = items.find(i => i.id === editingId);
     Object.assign(it, {phrase, meaning, source});
-    editingId = null; $("#editrow").style.display = "none"; $("#save").textContent = "Save";
+    setEditing(null);
     save(); clearForm(); refreshChrome(); toast("Updated"); go("words"); return;
   }
   items.unshift({
@@ -268,11 +353,8 @@ $("#save").onclick = () => {
   save(); clearForm(); refreshChrome(); toast("Saved");
   $("#f-phrase").focus();
 };
-function clearForm(){ $("#f-phrase").value = $("#f-meaning").value = $("#f-source").value = ""; }
-$("#cancel").onclick = () => {
-  editingId = null; clearForm();
-  $("#editrow").style.display = "none"; $("#save").textContent = "Save"; go("words");
-};
+function clearForm(){ fields.forEach(f => f.value = ""); growAll(); }
+$("#cancel").onclick = () => { setEditing(null); clearForm(); go("words"); };
 $("#f-phrase").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("#f-meaning").focus(); }});
 
 /* ---------- words list ---------- */
@@ -289,22 +371,26 @@ function renderList(){
       : `<div class="empty"><b>No phrases yet</b>Tap Add whenever you hear something new.</div>`;
     return;
   }
-  $("#list").innerHTML = rows.map(i => {
+  /* Closed, a row is the phrase and one line of meaning. Open, it shows
+     everything plus the three actions. */
+  $("#list").innerHTML = `<div class="group">` + rows.map(i => {
+    const isOpen = open === i.id;
     const pill = i.status === "known"
       ? '<span class="pill known">known</span>'
       : (i.due <= today() ? '<span class="pill due">due</span>' : '<span class="pill">' + prettyDate(i.due) + '</span>');
-    return `<div class="card" data-id="${i.id}">
-      <div class="p">${esc(i.phrase)}</div>
+    return `<div class="card${isOpen ? " open" : ""}" data-id="${i.id}">
+      <div class="top"><div class="p">${esc(i.phrase)}</div>${pill}</div>
       ${i.meaning ? `<div class="m">${esc(i.meaning)}</div>` : ""}
-      ${i.source ? `<div class="s">“${esc(i.source)}”</div>` : ""}
-      <div class="meta">${pill}<span>added ${prettyDate(i.created)}</span>${i.seen?`<span>· seen ${i.seen}×</span>`:""}</div>
-      ${open===i.id ? `<div class="acts">
+      ${isOpen ? `
+        ${i.source ? `<div class="s">“${esc(i.source)}”</div>` : ""}
+        <div class="meta"><span>added ${prettyDate(i.created)}</span>${i.seen ? `<span>seen ${i.seen}×</span>` : ""}</div>
+        <div class="acts">
           <button data-a="edit">Edit</button>
           <button data-a="reset">Review again</button>
           <button data-a="del" class="del">Delete</button>
         </div>` : ""}
     </div>`;
-  }).join("");
+  }).join("") + `</div>`;
 
   $("#list").querySelectorAll(".card").forEach(el => {
     el.onclick = e => {
@@ -312,9 +398,9 @@ function renderList(){
       if (!a){ open = (open === id ? null : id); return renderList(); }
       const it = items.find(x => x.id === id);
       if (a === "edit"){
-        editingId = id; $("#f-phrase").value = it.phrase;
-        $("#f-meaning").value = it.meaning; $("#f-source").value = it.source;
-        $("#save").textContent = "Update"; $("#editrow").style.display = "flex"; go("add");
+        setEditing(id);
+        $("#f-phrase").value = it.phrase; $("#f-meaning").value = it.meaning; $("#f-source").value = it.source;
+        go("add");
       } else if (a === "reset"){
         it.status = "learning"; it.due = today(); save(); open = null;
         refreshChrome(); renderList(); toast("Back in tonight's deck");
@@ -337,36 +423,42 @@ function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j = Ma
 function renderReview(){
   const box = $("#review-body");
   if (!items.length){
-    box.innerHTML = `<div class="empty"><b>Nothing to review</b>Add a few phrases during the day and they'll show up here tonight.</div>`;
+    box.innerHTML = `<div class="done"><div class="empty"><b>Nothing to review</b>Add a few phrases during the day and they'll show up here tonight.</div></div>`;
     return;
   }
   if (pos >= deck.length){
     const known = items.filter(i => i.status === "known").length;
-    box.innerHTML = `<div class="empty">
-        <b>${deck.length ? "Done for tonight" : "Nothing due tonight"}</b>
-        ${known} of ${items.length} marked known.
-      </div>
-      <button class="btn ghost" id="all">Practice all ${items.length} anyway</button>`;
+    box.innerHTML = `<div class="done">
+        <div class="empty">
+          <b>${deck.length ? "Done for tonight" : "Nothing due tonight"}</b>
+          ${known} of ${items.length} marked known.
+        </div>
+        <button class="btn ghost" id="all">Practice all ${items.length} anyway</button>
+      </div>`;
     $("#all").onclick = () => { deck = shuffle(items); pos = 0; flipped = false; practiceAll = true; renderReview(); };
     return;
   }
   const it = deck[pos];
   box.innerHTML = `
-    <div class="prog"><i style="width:${(pos/deck.length)*100}%"></i></div>
-    <div class="sub">${pos+1} of ${deck.length}${practiceAll?" · practice":""}</div>
-    <div class="flash" id="flash">
-      <div class="q">${esc(it.phrase)}</div>
+    <div class="rtop">
+      <div class="prog"><i style="width:${(pos/deck.length)*100}%"></i></div>
+      <span class="count">${pos+1} of ${deck.length}${practiceAll?" · practice":""}</span>
+    </div>
+    <div class="flash" id="flash" role="button" tabindex="0">
+      <div class="q${it.phrase.length > 60 ? " long" : ""}">${esc(it.phrase)}</div>
       ${flipped ? `<div class="a">
-          <div class="m">${esc(it.meaning) || "<span style='color:var(--muted)'>no meaning saved</span>"}</div>
+          <div class="m">${esc(it.meaning) || "<span class='none'>no meaning saved</span>"}</div>
           ${it.source ? `<div class="s">“${esc(it.source)}”</div>` : ""}
-        </div>` : `<div class="tap">tap to reveal</div>`}
+        </div>` : `<div class="tap">Tap to reveal</div>`}
     </div>
     ${flipped ? `<div class="grade">
         <button class="no" id="g-no">Didn't know</button>
         <button class="yes" id="g-yes">Knew it</button>
-      </div>` : ""}`;
+      </div>` : `<div class="grade-space"></div>`}`;
 
-  $("#flash").onclick = () => { if (!flipped){ flipped = true; renderReview(); } };
+  const f = $("#flash");
+  f.onclick = () => { if (!flipped){ flipped = true; renderReview(); } };
+  f.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); f.click(); } };
   if (flipped){
     $("#g-no").onclick  = () => grade(false);
     $("#g-yes").onclick = () => grade(true);
@@ -442,6 +534,9 @@ if ("serviceWorker" in navigator && location.protocol !== "file:"){
    or refuses it silently based on how much the site has been used, so it is
    a hint rather than a guarantee — Back up is still the real safety net. */
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+
+/* iOS only shows :active pressed states once a touch listener exists. */
+document.addEventListener("touchstart", () => {}, {passive:true});
 
 /* ---------- boot ---------- */
 refreshChrome(); refreshBackupHint();
