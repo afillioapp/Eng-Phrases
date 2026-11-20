@@ -34,7 +34,7 @@ npm test
 runner. **The app itself has no dependencies and must stay that way.** `node_modules`
 is gitignored.
 
-34 tests. Run them after every change.
+56 tests. Run them after every change.
 
 ## What's in here
 
@@ -64,6 +64,8 @@ should still work if you email it to yourself. Dev-only tooling is fine, gitigno
 keyed to the address the page was opened from — so `file://` and the GitHub Pages
 URL have separate, unconnected copies. The **Back up** button in the Words tab
 exports JSON; **Restore** merges it back without creating duplicates. Back up before
-changing how or where you open the app.
+changing how or where you open the app. The optional **Sync** button keeps the iPhone
+and the laptop matching through a private GitHub repo — see [DEPLOY.md](DEPLOY.md),
+step 8.
 
 Full constraints and reasoning: [CLAUDE.md](CLAUDE.md).

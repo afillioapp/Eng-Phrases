@@ -19,12 +19,13 @@ Live: `https://afillioapp.github.io/Eng-Phrases/`
 
 - **Live on GitHub Pages** since 2026-11-10, published from `main` (root folder). Every push to `main` republishes it, usually within 10 minutes. Phrases he saved before then are still in whichever browser he opened `phrasebook.html` in; `DEPLOY.md` steps 1 and 6 move them across.
 - **Vercel serves only the mockup.** Project `eng-phrases` (team Afillio) is linked to this repo with its root directory set to `mockup`, so every push also rebuilds `https://eng-phrases.vercel.app` from that folder alone. Keep the real app off Vercel: a second address would hold a second, separate copy of his phrases.
+- **Sync store:** private repo `afillioapp/phrasebook-data`, created 2026-11-20. Every sync is a commit there, so its history is also a backup. He turns sync on per device following `DEPLOY.md` step 8.
 - **The repo is public.** A push publishes everything committed, commit author emails included. Since 2026-11-10 this repo commits with his private GitHub noreply address (set in this repo's `git config user.email` only); the earlier commits still show his work email.
 
 ## Hard constraints — do not violate without asking first
 
 - **It stays a single HTML file.** No React, no bundler, no runtime dependencies, no shipped `node_modules`. The file should work if emailed to yourself. Dev-only tooling like a test runner is fine, gitignored. The PWA support files beside it — `manifest.json`, `sw.js`, `index.html`, `icons/` — are expected and do not count against this, and neither does the throwaway design mockup in `mockup/`.
-- **No backend, no accounts, no sync, no analytics.** `localStorage` only.
+- **No backend of our own, no accounts, no analytics.** Data lives in `localStorage`. The one exception, added 2026-11-20 at his request, is the optional Sync button. It reads and writes one JSON file in his private repo `afillioapp/phrasebook-data`, using an access key he pastes on each device. Nothing else talks to the network.
 - **No AI features and no dictionary API.** Alireza writes every definition himself in his own words — that is the entire point of the app. No auto-lookup, auto-translation, or generated example sentences.
 - **No spaced-repetition algorithm.** The rule is deliberately simple: knew it → gone for 30 days, didn't know → back tomorrow. Do not upgrade it to SM-2 or Anki-style intervals.
 - **Keep the visual language.** Redesigned on 2026-11-20 from a reference Alireza chose: warm cream by day, warm dark by night, serif phrases, generous spacing, one task per screen. Match what's in the file; don't drift back toward dense layouts.
@@ -41,6 +42,7 @@ If one of these seems wrong, say so and make the argument. Don't silently work a
   meaning,   // his own words, may be empty
   source,    // the situation he heard it in, may be empty
   created,   // ISO string
+  updated,   // ISO string, stamped on every change; sync keeps the newer copy (older items lack it and fall back to created)
   due,       // "YYYY-MM-DD"
   status,    // "new" | "learning" | "known"
   seen       // times graded
@@ -51,7 +53,9 @@ Stored newest-first in `localStorage` under the key `phrasebook.v1`. New entries
 
 **Known bug, scheduling:** because the deck excludes `known` items whatever their date, a phrase marked "Knew it" never comes back after its 30 days — only "Review again" or a grade in practice mode returns it. That contradicts the hard constraint ("gone for 30 days"). The likely fix is a deck of every item with `due <= today`; `tests/due-badge.test.js` asserts the current behaviour and would change with it. Not fixed: it changes what appears each night, so confirm with Alireza first.
 
-A second key, `phrasebook.backup`, holds the `YYYY-MM-DD` of the last export. It is deliberately separate so the `phrasebook.v1` array keeps its shape.
+A second key, `phrasebook.backup`, holds the `YYYY-MM-DD` of the last export. It is deliberately separate so the `phrasebook.v1` array keeps its shape. `phrasebook.deleted` maps each deleted id to when it was deleted, so a sync doesn't bring the phrase back. `phrasebook.sync` holds `{token, last}`. The token is his GitHub access key and must never leave that device's `localStorage`: the app's repo is public.
+
+**Sync** (`syncNow()`, `merge()`) works in five steps. It GETs `phrases.json` from the data repo, holding `{version:1, items, deleted}` in base64. It merges per id, so the newest `updated` wins, and a deletion beats any older copy. It saves locally, then PUTs with the file's `sha`. If the PUT returns 409/422, the other device wrote in between, so it starts over (3 attempts). A 404 on the first GET just means no file yet. The PUT is skipped when nothing changed, so idle syncs don't add commits. Tested end to end against the real GitHub API on 2026-11-20, including a real 409.
 
 Dates are local-timezone `YYYY-MM-DD` strings, never UTC — a phrase saved at 11pm belongs to that day, not the next one. Use the existing `dayStr()` helper, not `toISOString().slice(0,10)`. When differencing two date strings, build from the parts (`Date.UTC(y, m-1, d)`), never `new Date("YYYY-MM-DD")`, which parses as UTC midnight and lands a day out.
 
@@ -86,7 +90,7 @@ Tokens are defined in `:root`, with a dark set under `prefers-color-scheme: dark
 
 ```bash
 npm install   # once; pulls jsdom only
-npm test      # 34 tests
+npm test      # 56 tests
 ```
 
 Tests use jsdom: load the HTML with `runScripts: 'dangerously'`, drive it with real click and input events, assert against the resulting DOM and the `window.__pb` object the file exposes. They load the real file from disk — never inline a copy, or they drift from the app.
@@ -130,7 +134,6 @@ Ask Alireza before acting on any of these.
 
 - **The known-phrases bug** — fixing it changes the nightly deck (see Data model).
 - **Practice-mode grading.** "Practice all" reschedules every card it grades, so a known phrase marked "Didn't know" in practice comes back tomorrow. Keep that, or give practice cards a plain "Next" and leave scheduling alone.
-- **Sync between iPhone and laptop.** He chose sync over the no-backend rule. The proposal is a private GitHub repo as the store, with a Sync button, an access key pasted once per device, newest edit wins, and deleted phrases remembered. It's waiting on his go-ahead. Building it means rewriting the "No backend, no sync" constraint first.
 
 ## Backlog
 

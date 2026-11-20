@@ -152,6 +152,41 @@ It should open normally with all your phrases. If it does, you're done.
 
 ---
 
+## 8. Turn on sync — you
+
+Sync keeps the iPhone and the laptop matching, through a private GitHub repository
+(`phrasebook-data`) that only you can see. It needs one access key, which you make
+once and paste into the app on each device. Do steps 1 and 6 first, so each device
+already holds its phrases. The first sync merges them, and nothing is lost.
+
+**Make the key (on the laptop, about 2 minutes):**
+
+1. Signed in to GitHub, open `https://github.com/settings/personal-access-tokens/new`
+2. **Token name:** `Phrasebook sync`.
+3. **Expiration:** pick the longest option offered. When it runs out, Sync will say
+   "Access key not accepted" and you make a new key the same way.
+4. **Repository access:** choose **Only select repositories**, then pick
+   **phrasebook-data**. Nothing else.
+5. **Permissions → Repository permissions → Contents:** set to **Read and write**.
+   Leave everything else as it is.
+6. Click **Generate token** and copy it. It starts with `github_pat_`. GitHub shows it
+   only once.
+
+**Put it in the app:**
+
+1. Open the app, go to **Words**, scroll to **Sync**, tap **Set up sync**.
+2. Paste the key and tap **Save key**. It syncs straight away and says **Synced**.
+3. Do the same on the other device. On the iPhone, open the app from the home screen
+   icon, not Safari. To get the key across, copy it on the Mac and paste on the iPhone
+   (Universal Clipboard), or AirDrop it to yourself.
+4. If you pasted the key anywhere on the way, like Notes, delete it from there. Never
+   put it in this project folder: this repository is public.
+
+**Day to day:** tap **Sync** at the top of the Words tab on the device you just used,
+then again on the other one before you review. It never syncs on its own.
+
+---
+
 ## Things worth knowing
 
 **Your phrases still only live on that phone.** The home screen install makes iOS far less
@@ -161,8 +196,9 @@ it says nothing about what happens if you delete the icon. **Keep hitting Back u
 then**, and send the file to iCloud or Drive from the share sheet. The app will remind you
 when it's been a while.
 
-**The phone and the laptop are still separate.** Adding a phrase on one won't show it on the
-other. Moving a backup file across is the way to sync them by hand.
+**The phone and the laptop each keep their own copy.** Adding a phrase on one shows up on
+the other only after you tap **Sync** on both (step 8). Without sync, moving a backup file
+across is the way to match them by hand.
 
 **When the app gets updated:** push the change, then wait up to 10 minutes for GitHub to
 publish and for your browser to stop using its cached copy. If you're impatient, close the

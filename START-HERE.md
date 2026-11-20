@@ -34,7 +34,7 @@ dependencies and must stay that way.
 npm test
 ```
 
-You should see `pass 34`. If you don't, something is wrong before you've even
+You should see `pass 56`. If you don't, something is wrong before you've even
 started — say so.
 
 ### 4. Push it to GitHub and switch on Pages — done
