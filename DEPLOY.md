@@ -161,16 +161,18 @@ already holds its phrases. The first sync merges them, and nothing is lost.
 
 **Make the key (on the laptop, about 2 minutes):**
 
-1. Signed in to GitHub, open `https://github.com/settings/personal-access-tokens/new`
-2. **Token name:** `Phrasebook sync`.
-3. **Expiration:** pick the longest option offered. When it runs out, Sync will say
-   "Access key not accepted" and you make a new key the same way.
-4. **Repository access:** choose **Only select repositories**, then pick
-   **phrasebook-data**. Nothing else.
-5. **Permissions → Repository permissions → Contents:** set to **Read and write**.
-   Leave everything else as it is.
-6. Click **Generate token** and copy it. It starts with `github_pat_`. GitHub shows it
+1. Signed in to GitHub, open this link. It fills in the name, owner (`afillioapp`), a
+   one-year lifetime, and the one permission sync needs (Contents: read and write):
+
+   `https://github.com/settings/personal-access-tokens/new?name=Phrasebook+sync&description=Sync+for+the+Phrasebook+app.+Give+it+access+to+phrasebook-data+only.&target_name=afillioapp&expires_in=366&contents=write`
+
+2. **Repository access** is the one thing a link can't set. Choose **Only select
+   repositories**, then pick **phrasebook-data**. Nothing else.
+3. Click **Generate token** and copy it. It starts with `github_pat_`. GitHub shows it
    only once.
+
+After a year Sync will say "Access key not accepted". Open the same link, make a new key,
+and paste it in on both devices (**Remove key**, then **Set up sync**).
 
 **Put it in the app:**
 
