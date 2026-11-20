@@ -21,7 +21,7 @@
  */
 "use strict";
 
-const VERSION = "3";
+const VERSION = "4";
 const CACHE = "phrasebook-v" + VERSION;
 
 /* Relative paths throughout: this is served from a subpath on GitHub Pages

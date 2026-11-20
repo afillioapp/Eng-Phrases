@@ -79,6 +79,9 @@
   .primary{min-height:44px;padding:0 22px;border-radius:999px;background:var(--text);color:var(--on-text);font-weight:600;font-size:16px}
   .link{min-height:44px;padding:0 2px;color:var(--muted);font-size:16px}
   .primary:active,.btn:active,.link:active{opacity:.7}
+  .small{min-height:44px;padding:0 16px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:14px;font-weight:600}
+  .small:active{opacity:.7}
+  .small:disabled{opacity:.55}
 
   /* ---------- add ---------- */
   .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--R)}
@@ -224,10 +227,24 @@
   <section id="p-words" class="panel">
     <div class="bar">
       <span class="label">Your phrases</span>
-      <span class="count" id="stat"></span>
+      <div class="lead">
+        <span class="count" id="stat"></span>
+        <button class="small" id="syncbtn" hidden>Sync</button>
+      </div>
     </div>
     <input id="search" class="search" placeholder="Search phrases, meanings, context" autocomplete="off" autocapitalize="none" enterkeyhint="search" aria-label="Search">
     <div id="list"></div>
+    <div class="backup">
+      <span class="label">Sync</span>
+      <p class="hint" id="sync-hint"></p>
+      <div id="sync-setup" hidden>
+        <input id="sync-key" class="search" placeholder="Paste your access key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Access key">
+      </div>
+      <div class="two">
+        <button class="btn ghost" id="sync-a"></button>
+        <button class="btn ghost" id="sync-b" hidden>Cancel</button>
+      </div>
+    </div>
     <div class="backup">
       <span class="label">Backup</span>
       <p class="hint" id="backup-hint">Everything is stored on this device only.</p>
@@ -265,12 +282,20 @@ const $ = s => document.querySelector(s);
 /* ---------- storage ---------- */
 let items = [];
 try { items = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e){ items = []; }
+/* Deleted ids, each with when it was deleted, so a sync doesn't bring a
+   phrase back from the other device. Its own key, so phrasebook.v1 keeps
+   its shape. */
+const DKEY = "phrasebook.deleted";
+let deleted = {};
+try { deleted = JSON.parse(localStorage.getItem(DKEY) || "{}") || {}; } catch(e){ deleted = {}; }
 /* If the write fails — a full disk, Safari private mode — say so out loud.
    Failing silently here would look exactly like a successful save. */
 const save = () => {
-  try { localStorage.setItem(KEY, JSON.stringify(items)); }
+  try { localStorage.setItem(KEY, JSON.stringify(items)); localStorage.setItem(DKEY, JSON.stringify(deleted)); }
   catch(e){ toast("Couldn't save — storage is full"); }
 };
+/* Every change stamps the phrase, so sync can tell which copy is newer. */
+const touch = it => { it.updated = new Date().toISOString(); };
 
 /* ---------- dates ---------- */
 const dayStr = d => { const x = d ? new Date(d) : new Date();
@@ -340,14 +365,15 @@ $("#save").onclick = () => {
 
   if (editingId){
     const it = items.find(i => i.id === editingId);
-    Object.assign(it, {phrase, meaning, source});
+    Object.assign(it, {phrase, meaning, source}); touch(it);
     setEditing(null);
     save(); clearForm(); refreshChrome(); toast("Updated"); go("words"); return;
   }
+  const now = new Date().toISOString();
   items.unshift({
     id: Date.now() + "-" + Math.random().toString(36).slice(2,7),
     phrase, meaning, source,
-    created: new Date().toISOString(),
+    created: now, updated: now,
     due: today(), status: "new", seen: 0
   });
   save(); clearForm(); refreshChrome(); toast("Saved");
@@ -402,10 +428,11 @@ function renderList(){
         $("#f-phrase").value = it.phrase; $("#f-meaning").value = it.meaning; $("#f-source").value = it.source;
         go("add");
       } else if (a === "reset"){
-        it.status = "learning"; it.due = today(); save(); open = null;
+        it.status = "learning"; it.due = today(); touch(it); save(); open = null;
         refreshChrome(); renderList(); toast("Back in tonight's deck");
       } else if (a === "del"){
         if (!confirm("Delete “" + it.phrase + "”?")) return;
+        deleted[id] = new Date().toISOString();
         items = items.filter(x => x.id !== id); save(); open = null;
         refreshChrome(); renderList(); toast("Deleted");
       }
@@ -469,7 +496,7 @@ function grade(knew){
   it.seen = (it.seen || 0) + 1;
   if (knew){ it.status = "known"; it.due = plusDays(30); }
   else { it.status = "learning"; it.due = plusDays(1); }
-  save(); refreshChrome();
+  touch(it); save(); refreshChrome();
   pos++; flipped = false; renderReview();
 }
 
@@ -523,6 +550,107 @@ $("#importfile").onchange = e => {
   r.readAsText(f);
 };
 
+/* ---------- sync ---------- */
+/* Optional. Phrases are copied to one JSON file in a private GitHub repo so
+   the iPhone and the laptop can share them. The access key is pasted once per
+   device and kept only in that device's localStorage, never in this file,
+   which is public. For each phrase, the copy changed most recently wins;
+   deleted phrases stay deleted. The service worker ignores other origins,
+   so these requests always go to the network. */
+const SKEY = "phrasebook.sync";
+const SYNC_URL = "https://api.github.com/repos/afillioapp/phrasebook-data/contents/phrases.json";
+const syncCfg = () => { try { return JSON.parse(localStorage.getItem(SKEY) || "{}") || {}; } catch(e){ return {}; } };
+const setSyncCfg = c => { try { localStorage.setItem(SKEY, JSON.stringify(c)); } catch(e){} };
+/* UTF-8-safe base64, because phrases hold accents and curly quotes. */
+const toB64 = s => btoa(unescape(encodeURIComponent(s)));
+const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ""))));
+const stamp = i => i.updated || i.created || "";
+
+function merge(localItems, localDel, remote){
+  const del = Object.assign({}, remote.deleted || {});
+  Object.keys(localDel).forEach(id => { if (!del[id] || localDel[id] > del[id]) del[id] = localDel[id]; });
+  const byId = new Map();
+  (remote.items || []).concat(localItems).forEach(it => {
+    if (!it || !it.id || !it.phrase) return;
+    const cur = byId.get(it.id);
+    if (!cur || stamp(it) > stamp(cur)) byId.set(it.id, it);
+  });
+  /* A deletion beats any copy older than it; a later edit brings it back. */
+  const out = [...byId.values()].filter(it => !(del[it.id] && del[it.id] >= stamp(it)));
+  out.sort((a,b) => (b.created||"").localeCompare(a.created||""));
+  return { items: out, deleted: del };
+}
+
+let syncing = false, setupOpen = false;
+async function syncNow(){
+  const cfg = syncCfg();
+  if (!cfg.token || syncing) return;
+  syncing = true; refreshSyncUI();
+  const H = { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json" };
+  try {
+    for (let attempt = 0; ; attempt++){
+      const r = await fetch(SYNC_URL, { headers: H, cache: "no-store" });
+      let remote = { items: [], deleted: {} }, sha;
+      if (r.ok){ const j = await r.json(); sha = j.sha; remote = JSON.parse(fromB64(j.content)); }
+      else if (r.status !== 404) throw r.status;   /* 404: first sync, no file yet */
+      const m = merge(items, deleted, remote);
+      items = m.items; deleted = m.deleted; save();
+      const same = JSON.stringify(m) === JSON.stringify(merge(remote.items || [], remote.deleted || {}, {}));
+      if (sha && same) break;                       /* nothing new to send */
+      const p = await fetch(SYNC_URL, {
+        method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, H),
+        body: JSON.stringify({
+          message: "Sync from " + (/iPhone|iPad/.test(navigator.userAgent) ? "iPhone" : "laptop"),
+          content: toB64(JSON.stringify({ version: 1, items: m.items, deleted: m.deleted }, null, 1)),
+          sha
+        })
+      });
+      /* 409 or 422: the other device synced in between. Start again from its copy. */
+      if ((p.status === 409 || p.status === 422) && attempt < 2) continue;
+      if (!p.ok) throw p.status;
+      break;
+    }
+    setSyncCfg(Object.assign(syncCfg(), { last: new Date().toISOString() }));
+    refreshChrome(); toast("Synced");
+  } catch(e){
+    toast(e === 401 ? "Access key not accepted — it may have expired"
+      : (e === 403 || e === 404) ? "This key can't open the phrasebook-data repo"
+      : typeof e === "number" ? "Sync failed (error " + e + ")"
+      : e instanceof SyntaxError ? "The synced file didn't look right"
+      : "Couldn't reach GitHub — check your connection");
+  } finally {
+    syncing = false; refreshSyncUI();
+    if (tab === "words") renderList();
+  }
+}
+
+function refreshSyncUI(){
+  const cfg = syncCfg(), on = !!cfg.token, b = $("#syncbtn");
+  b.hidden = !on; b.disabled = syncing; b.textContent = syncing ? "Syncing…" : "Sync";
+  $("#sync-setup").hidden = !setupOpen;
+  $("#sync-b").hidden = !setupOpen;
+  $("#sync-hint").textContent = on
+    ? (cfg.last ? "Last synced " + new Date(cfg.last).toLocaleString(undefined, {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}) + "."
+                : "Not synced on this device yet.")
+    : setupOpen ? "Paste the access key you made on GitHub."
+    : "Keep your iPhone and laptop in step through your private GitHub repo.";
+  $("#sync-a").textContent = on ? "Remove key" : setupOpen ? "Save key" : "Set up sync";
+}
+$("#syncbtn").onclick = () => syncNow();
+$("#sync-a").onclick = () => {
+  if (syncCfg().token){
+    if (!confirm("Turn off sync on this device? Your phrases stay here.")) return;
+    try { localStorage.removeItem(SKEY); } catch(e){}
+    refreshSyncUI(); return toast("Sync turned off on this device");
+  }
+  if (!setupOpen){ setupOpen = true; refreshSyncUI(); return $("#sync-key").focus(); }
+  const key = $("#sync-key").value.trim();
+  if (!key){ $("#sync-key").focus(); return toast("Paste the key first"); }
+  setSyncCfg({ token: key }); $("#sync-key").value = ""; setupOpen = false;
+  refreshSyncUI(); syncNow();
+};
+$("#sync-b").onclick = () => { setupOpen = false; $("#sync-key").value = ""; refreshSyncUI(); };
+
 /* ---------- offline ---------- */
 /* Relative path, never "/sw.js" — served from a subpath on GitHub Pages, so
    an absolute path resolves off the site entirely. file:// has no service
@@ -539,11 +667,12 @@ if (navigator.storage && navigator.storage.persist) navigator.storage.persist().
 document.addEventListener("touchstart", () => {}, {passive:true});
 
 /* ---------- boot ---------- */
-refreshChrome(); refreshBackupHint();
+refreshChrome(); refreshBackupHint(); refreshSyncUI();
 if (dueNow().length && items.length > 3) go("review"); else go("add");
 
 /* expose for tests */
-window.__pb = { get items(){return items}, dueNow, plusDays, today, grade:(k)=>grade(k) };
+window.__pb = { get items(){return items}, get deleted(){return deleted}, dueNow, plusDays, today,
+  grade:(k)=>grade(k), merge, syncNow };
 })();
 </script>
 </body>
