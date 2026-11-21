@@ -8,7 +8,7 @@ dependencies" a hard constraint, so whatever comes back cannot be dropped into
 `phrasebook.html`. Treat the output as a sketch to steal ideas from.
 
 A working mockup of the current design proposals, built to the same rules, is in
-`mockup/index.html` and online at https://eng-phrases.vercel.app.
+`mockup/proposals.html` and online at https://eng-phrases.vercel.app/proposals.html.
 
 Three things deliberately written into the prompt, because without them every AI
 builder drifts the same way:

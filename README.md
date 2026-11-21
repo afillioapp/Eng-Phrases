@@ -10,7 +10,7 @@ through flashcards.
 Live at **https://afillioapp.github.io/Eng-Phrases/**. To put it on your iPhone,
 follow [DEPLOY.md](DEPLOY.md).
 
-A design mockup with sample phrases is at **https://eng-phrases.vercel.app**. It's
+The old design mockup is at **https://eng-phrases.vercel.app/proposals.html**. It's
 for looking at: it never saves anything.
 
 ---
@@ -47,7 +47,7 @@ is gitignored.
 | `icons/` | Five PNGs: 32, 180, 192, 512, and a 512 maskable. |
 | `tools/make-icons.js` | Regenerates the icons. No image library — `node tools/make-icons.js`. |
 | `tests/` | jsdom test suite. |
-| `mockup/index.html` | Throwaway design mockup with sample phrases, online at eng-phrases.vercel.app. Not the app. |
+| `mockup/` | `proposals.html` is the old design mockup (eng-phrases.vercel.app/proposals.html). `index.html` forwards eng-phrases.vercel.app to the real app. |
 | `.nojekyll` | Stops GitHub Pages running the files through Jekyll. |
 | `CLAUDE.md` | Project rules, loaded automatically by Claude Code each session. |
 | `DEPLOY.md` | Getting it onto the phone, step by step. |

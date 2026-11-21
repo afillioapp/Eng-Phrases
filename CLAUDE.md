@@ -18,7 +18,7 @@ Live: `https://afillioapp.github.io/Eng-Phrases/`
 ## Where things stand
 
 - **Live on GitHub Pages** since 2026-11-10, published from `main` (root folder). Every push to `main` republishes it, usually within 10 minutes. Phrases he saved before then are still in whichever browser he opened `phrasebook.html` in; `DEPLOY.md` steps 1 and 6 move them across.
-- **Vercel serves only the mockup.** Project `eng-phrases` (team Afillio) is linked to this repo with its root directory set to `mockup`, so every push also rebuilds `https://eng-phrases.vercel.app` from that folder alone. Keep the real app off Vercel: a second address would hold a second, separate copy of his phrases.
+- **Vercel forwards to the app.** Project `eng-phrases` (team Afillio) is linked to this repo with its root directory set to `mockup`, so every push rebuilds `https://eng-phrases.vercel.app` from that folder alone. Since 2026-11-20 that address forwards to the GitHub Pages app (`mockup/index.html`), because he kept opening it and seeing the old design. The old mockup lives on at `/proposals.html`. Keep the real app off Vercel: a second address would hold a second, separate copy of his phrases.
 - **Sync store:** private repo `afillioapp/phrasebook-data`, created 2026-11-20. Every sync is a commit there, so its history is also a backup. He turns sync on per device following `DEPLOY.md` step 8.
 - **The repo is public.** A push publishes everything committed, commit author emails included. Since 2026-11-10 this repo commits with his private GitHub noreply address (set in this repo's `git config user.email` only); the earlier commits still show his work email.
 
@@ -80,7 +80,7 @@ Tokens are defined in `:root`, with a dark set under `prefers-color-scheme: dark
 | `icons/` | 32, 180, 192, 512, 512-maskable. |
 | `tools/make-icons.js` | Regenerates them, no image library. |
 | `tests/` | jsdom suite. |
-| `mockup/index.html` | Throwaway design mockup. Sample data in memory, never touches `localStorage`. Served at eng-phrases.vercel.app. Not the app: port ideas from it one at a time, never copy it over `phrasebook.html`. |
+| `mockup/` | `index.html` forwards eng-phrases.vercel.app to the real app. `proposals.html` is the throwaway design mockup: sample data in memory, never touches `localStorage`, still the old dark look, served at eng-phrases.vercel.app/proposals.html. Not the app: port ideas from it one at a time, never copy it over `phrasebook.html`. |
 
 **Everything is served from a subpath on GitHub Pages**, so every path in every file must be relative. An absolute `/sw.js` resolves off the site entirely — this is the single most common way this deploy breaks, because most tutorials assume root hosting.
 
@@ -141,7 +141,7 @@ Ask Alireza before acting on any of these.
 2. **Tags — designed, not built.** One tag per phrase, stored as a `tag` string on the item, empty allowed. Picked by tapping a chip from tags already used, plus a "+ New" that reveals a text input. Rendered as **text chips in the existing pill style — not emoji, not icons.** Used to filter the Words tab only; reviewing one tag at a time was considered and deliberately dropped for now. Chips in the Add form and the filter row are tappable, so they need the 44px minimum.
 3. **Save with an empty meaning.** Already works — only `phrase` is required. What's missing is marking such entries incomplete and adding a "needs meaning" filter in the Words tab.
 4. **Relabel `source`.** The field is labelled "Where I heard it" but what he actually writes is the social situation ("chatting with someone I was trying to get to know"). The label and placeholder should ask for that. The stored key stays `source` so old backups keep importing.
-5. **Remaining design proposals from the mockup — not decided.** The redesign already took Save in the top bar, the large growing phrase box, equal-weight answers pinned low, a phrase that doesn't move, serif type and pressed states. Still only in `mockup/index.html` (which keeps the old dark look): Undo after each grade, "Add meaning" instead of the grade buttons when a card has no meaning, the backup reminder at the top of Words when overdue, and Delete confirmed on the button instead of `confirm()`. Port one per commit.
+5. **Remaining design proposals from the mockup — not decided.** The redesign already took Save in the top bar, the large growing phrase box, equal-weight answers pinned low, a phrase that doesn't move, serif type and pressed states. Still only in `mockup/proposals.html` (which keeps the old dark look): Undo after each grade, "Add meaning" instead of the grade buttons when a card has no meaning, the backup reminder at the top of Words when overdue, and Delete confirmed on the button instead of `confirm()`. Port one per commit.
 6. **Reverse cards.** Show the definition, recall the phrase.
 7. **Pronunciation.** Read the phrase aloud with the browser's built-in `speechSynthesis`. No external API.
 8. **Light stats.** Nightly streak, how many marked known this week, which phrases keep getting failed.

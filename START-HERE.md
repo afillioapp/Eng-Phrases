@@ -127,8 +127,8 @@ home screen. If it isn't installed yet, do that first ([DEPLOY.md](DEPLOY.md), s
 
 ## The design mockup
 
-`mockup/index.html` shows proposed design changes with sample phrases. It never saves
-anything. It's online at https://eng-phrases.vercel.app — on the laptop you see the
+`mockup/proposals.html` shows proposed design changes with sample phrases. It never saves
+anything. It's online at https://eng-phrases.vercel.app/proposals.html — on the laptop you see the
 three screens side by side, on the iPhone it runs full-screen.
 
 It isn't the app, so don't add it to your home screen. To change it, ask Claude.

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#12131a">
+<title>Phrasebook mockup</title>
+<!-- Throwaway design mockup. Sample data is held in memory only: this page
+     never reads or writes localStorage, so it cannot touch real saved phrases. -->
+<style>
+  :root{
+    --bg:#12131a; --surface:#1c1e28; --surface2:#252836; --line:#31344a;
+    --text:#eef0f7; --text2:#d5d9ec; --muted:#9aa0b8;
+    --accent:#7c8cff; --good:#3ecf8e; --warn:#ffb454; --danger:#ff7a7a;
+    /* dim border partners for the outlined pills and buttons */
+    --accent-line:#3a4278; --good-line:#28613f; --warn-line:#6b4b17; --danger-line:#733737;
+    --r:14px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --phrase:var(--sans);
+  }
+  /* The optional idea: phrases and situations in the system serif. */
+  :root.serif{--phrase:ui-serif,"New York","Iowan Old Style",Georgia,serif}
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none!important}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.5 var(--sans);overflow-wrap:break-word;-webkit-text-size-adjust:100%}
+  button{font:inherit;cursor:pointer;border:none;border-radius:var(--r);color:inherit;background:none;padding:0;touch-action:manipulation}
+  button:focus-visible,.flash:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ---------- shell ---------- */
+  #app{height:100vh;height:100dvh;display:flex;flex-direction:column}
+  header{
+    flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:env(safe-area-inset-top) 6px 0 18px;height:calc(54px + env(safe-area-inset-top));
+    border-bottom:1px solid var(--line);
+  }
+  .hl,.hr{display:flex;align-items:center;min-width:0}
+  header h1{font-size:18px;margin:0;letter-spacing:.3px}
+  #stat{font-size:13px;color:var(--muted);padding-right:12px}
+  /* Text buttons: small to look at, 44px to touch. */
+  .hbtn{min-width:44px;height:44px;padding:0 12px;font-size:16px;color:var(--muted);white-space:nowrap}
+  .hbtn:active{opacity:.55}
+  .hbtn.pri{color:var(--accent);font-weight:650}
+  .hbtn.pri.dim{color:var(--muted);font-weight:500}
+  .hbtn.pri.ok{color:var(--good)}
+  #cancel{margin-left:-12px}
+  .mock{height:44px;margin-left:8px}
+  .mock span{display:block;font-size:11px;line-height:20px;padding:0 8px;color:var(--muted);border:1px dashed var(--line);border-radius:999px;white-space:nowrap}
+
+  main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:18px 18px 0;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+  .panel{display:none;flex:none}
+  .panel.on{display:block}
+  .panel::after{content:"";display:block;height:18px;flex:none}
+
+  /* ---------- form ---------- */
+  label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px 2px}
+  input,textarea{
+    display:block;width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);
+    border-radius:var(--r);padding:13px 14px;font:inherit;font-size:16px;outline:none;resize:none;
+    -webkit-appearance:none;appearance:none;
+  }
+  textarea{overflow:hidden}
+  input:focus,textarea:focus{border-color:var(--accent)}
+  ::placeholder{color:var(--muted);opacity:.55}
+  .field{margin-bottom:16px}
+  /* The phrase is the entry itself, so it is set like one. */
+  .big{font-family:var(--phrase);font-size:22px;font-weight:600;line-height:1.3}
+  .hint{font-size:12px;color:var(--muted);margin:10px 2px 0}
+
+  /* Chip row runs off both screen edges, so a half-visible chip shows there is more. */
+  .chips{display:flex;gap:8px;overflow-x:auto;margin:0 -18px;padding:0 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;height:44px;min-width:44px;display:flex;align-items:center;justify-content:center;border-radius:999px}
+  .chip span{
+    display:block;height:34px;line-height:32px;padding:0 13px;border:1px solid var(--line);border-radius:999px;
+    background:var(--surface);color:var(--muted);font-size:14px;white-space:nowrap;
+  }
+  .chip:active span{background:var(--surface2)}
+  .chip.on span{border-color:var(--accent);color:var(--accent);background:var(--surface2)}
+  .chip.new span{border-style:dashed}
+  .taginput{flex:none;align-self:center;width:128px;height:34px;padding:0 13px;border-radius:999px}
+  #filters{margin-bottom:8px}
+
+  .btn{
+    display:block;width:100%;min-height:52px;padding:14px;background:var(--surface2);border:1px solid var(--line);
+    color:var(--text);font-weight:600;font-size:16px;
+  }
+  .btn:active{opacity:.7}
+  .btn.text{background:none;border-color:transparent;color:var(--muted);font-weight:500;font-size:15px}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));
+    background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:9px 18px;border-radius:999px;
+    font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;white-space:nowrap;
+  }
+  .toast.on{opacity:1}
+
+  /* ---------- words ---------- */
+  .notice{
+    display:flex;align-items:center;justify-content:space-between;min-height:46px;margin-bottom:14px;
+    padding:0 2px 0 14px;border:1px solid var(--warn-line);border-radius:var(--r);color:var(--warn);font-size:13px;
+  }
+  .notice .hbtn{color:var(--warn);font-weight:600;font-size:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;touch-action:manipulation}
+  .card:not(.open):active{background:var(--surface2)}
+  .card .p{font-family:var(--phrase);font-weight:650;font-size:17px;line-height:1.35}
+  .card .m{color:var(--text2);margin-top:5px}
+  .none{color:var(--muted)!important}
+  .card .s{font-family:var(--phrase);color:var(--muted);font-size:14px;margin-top:7px;font-style:italic}
+  .meta{display:flex;gap:8px;align-items:center;margin-top:11px;font-size:12px;color:var(--muted)}
+  .pill{padding:2px 9px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);white-space:nowrap}
+  .pill.new,.pill.learning,.pill.known{text-transform:capitalize}
+  .pill.new{color:var(--accent);border-color:var(--accent-line)}
+  .pill.learning{color:var(--warn);border-color:var(--warn-line)}
+  .pill.known{color:var(--good);border-color:var(--good-line)}
+  .meta .when{margin-left:auto;white-space:nowrap}
+  .acts{display:flex;gap:8px;margin-top:12px}
+  .acts button{flex:1;min-height:44px;padding:0 4px;background:var(--surface2);border:1px solid var(--line);color:var(--text2);font-size:13px}
+  .acts button:active{opacity:.7}
+  .acts .del{color:var(--danger)}
+  .acts .del.sure{border-color:var(--danger-line)}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px 24px;font-size:15px}
+  .empty b{display:block;color:var(--text);font-size:17px;margin-bottom:8px}
+
+  /* ---------- review ---------- */
+  /* The panel fills the screen: card takes the free space, the two answers
+     are pinned to the bottom so the thumb never has to look for them. */
+  #p-review.on{display:flex;flex-direction:column;flex:1 0 auto}
+  #review-body{flex:1 0 auto;display:flex;flex-direction:column}
+  .prog{flex:none;height:3px;background:var(--surface2);border-radius:9px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--accent);width:0}
+  .rtop{flex:none;display:flex;align-items:center;justify-content:space-between;height:44px;font-size:13px;color:var(--muted);padding-left:2px}
+  .rtop .hbtn{font-size:14px;margin-right:-12px}
+  .flash{
+    flex:1 0 auto;min-height:220px;background:var(--surface);border:1px solid var(--line);border-radius:20px;
+    padding:0 22px 22px;display:flex;flex-direction:column;text-align:center;cursor:pointer;touch-action:manipulation;
+  }
+  /* Free space splits 1 : 2 above and below the phrase. The answer is laid
+     out from the start and only faded in, so the phrase never moves. */
+  .flash::before{content:"";flex:1 1 0;min-height:26px}
+  .flash .q{flex:none;font-family:var(--phrase);font-size:26px;font-weight:650;line-height:1.3}
+  .flash .q.long{font-size:22px}
+  .below{flex:2 1 0;position:relative;margin-top:20px}
+  .tap{position:absolute;left:0;right:0;top:22px;color:var(--muted);font-size:13px;transition:opacity .18s}
+  .a{padding-top:20px;border-top:1px solid var(--line);visibility:hidden;opacity:0;transition:opacity .18s}
+  .a .m{font-size:17px;line-height:1.45;color:var(--text2)}
+  .a .s{font-family:var(--phrase);font-size:15px;color:var(--muted);font-style:italic;margin-top:14px}
+  .flash.open{cursor:default}
+  .flash.open .tap{opacity:0}
+  .flash.open .a{visibility:visible;opacity:1}
+  /* Same weight for both answers: outlined, like the status pills. */
+  .grade{flex:none;display:flex;gap:10px;margin-top:14px;visibility:hidden;opacity:0;transition:opacity .18s}
+  .grade.on{visibility:visible;opacity:1}
+  .grade button{flex:1;height:56px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:16px}
+  .grade button:active{opacity:.6}
+  .grade .no{color:var(--warn);border-color:var(--warn-line)}
+  .grade .yes{color:var(--good);border-color:var(--good-line)}
+  .grade .act{color:var(--accent);border-color:var(--accent-line)}
+  .done{margin:auto 0}
+  .done .btn+.btn{margin-top:6px}
+
+  /* ---------- tab bar ---------- */
+  nav{flex:none;display:flex;border-top:1px solid var(--line);background:var(--surface);padding-bottom:env(safe-area-inset-bottom)}
+  nav button{
+    position:relative;flex:1;color:var(--muted);padding:10px 4px;font-size:12px;border-radius:0;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  nav button.on{color:var(--accent)}
+  nav button:active{color:var(--text)}
+  nav .badge{
+    position:absolute;top:5px;left:50%;margin-left:8px;background:var(--warn);color:#2a1a00;
+    font-size:10px;font-weight:700;line-height:16px;min-width:16px;border-radius:999px;padding:0 5px;
+  }
+
+  /* ---------- laptop view: three screens side by side ---------- */
+  #gallery{padding:28px 24px 48px;max-width:1300px;margin:0 auto}
+  .ghead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:24px}
+  .ghead h2{font-size:22px;margin:0 0 6px}
+  .ghead p{margin:0;color:var(--muted);font-size:14px;max-width:62ch}
+  .seg{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface)}
+  .seg button{min-height:44px;padding:0 18px;border-radius:999px;font-size:14px;color:var(--muted)}
+  .seg button.on{background:var(--surface2);color:var(--text)}
+  .frames{display:flex;flex-wrap:wrap;justify-content:center;gap:32px}
+  figure{margin:0;width:375px}
+  iframe{display:block;width:375px;height:clamp(620px,calc(100vh - 150px),812px);border:1px solid var(--line);border-radius:28px;background:var(--bg)}
+  figcaption{margin-top:14px;font-size:14px;color:var(--muted)}
+  figcaption b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+  figcaption ul{margin:0;padding-left:18px}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="gallery" hidden>
+  <div class="ghead">
+    <div>
+      <h2>Phrasebook design mockup</h2>
+      <p>Sample phrases only. Nothing typed here is saved. Every screen works, so tap around. Open this same address on an iPhone to try it full-screen.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Typeface for phrases">
+      <button data-f="0" class="on">Sans phrases</button><button data-f="1">Serif phrases</button>
+    </div>
+  </div>
+  <div class="frames">
+    <figure>
+      <iframe title="Add screen" data-q="tab=add"></iframe>
+      <figcaption><b>Add</b><ul>
+        <li>The phrase is the largest text and grows to fit a long sentence.</li>
+        <li>Save is in the top corner, so the keyboard cannot cover it.</li>
+        <li>One tag per phrase, picked from a row of chips.</li>
+      </ul></figcaption>
+    </figure>
+    <figure>
+      <iframe title="Review screen" data-q="tab=review"></iframe>
+      <figcaption><b>Review</b><ul>
+        <li>The phrase stays still while the answer fades in.</li>
+        <li>Both answers look equal and sit low, under the thumb.</li>
+        <li>Undo appears after each answer.</li>
+      </ul></figcaption>
+    </figure>
+    <figure>
+      <iframe title="Words screen" data-q="tab=words"></iframe>
+      <figcaption><b>Words</b><ul>
+        <li>The backup reminder sits at the top when a backup is overdue.</li>
+        <li>Tag filter under the search box.</li>
+        <li>Tap a card for Edit, Review again and Delete.</li>
+      </ul></figcaption>
+    </figure>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hl">
+      <button class="hbtn" id="cancel" hidden>Cancel</button>
+      <h1 id="title">Phrasebook</h1>
+      <button class="mock" id="mock" aria-label="Switch the typeface used for phrases"><span>mockup · sans</span></button>
+    </div>
+    <div class="hr">
+      <span id="stat"></span>
+      <button class="hbtn pri dim" id="save">Save</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ADD -->
+    <section id="p-add" class="panel">
+      <div class="field">
+        <label for="f-phrase">Phrase</label>
+        <textarea id="f-phrase" class="big" rows="1" placeholder="What did you hear?" autocomplete="off" autocapitalize="none" enterkeyhint="next"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-meaning">What it means</label>
+        <textarea id="f-meaning" rows="1" placeholder="In your own words"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-source">The situation</label>
+        <textarea id="f-source" rows="1" placeholder="Who said it, and when?"></textarea>
+      </div>
+      <div class="field">
+        <label id="tag-label">Tag</label>
+        <div class="chips" id="tags" role="group" aria-labelledby="tag-label"></div>
+      </div>
+    </section>
+
+    <!-- WORDS -->
+    <section id="p-words" class="panel">
+      <div class="notice" id="bk"><span>Last backed up 20 days ago.</span><button class="hbtn" id="bk-go">Back up</button></div>
+      <div class="field">
+        <input id="search" placeholder="Search phrases, meanings, situations" autocomplete="off" autocapitalize="none" enterkeyhint="search" aria-label="Search">
+      </div>
+      <div class="chips" id="filters" role="group" aria-label="Filter by tag"></div>
+      <div id="list"></div>
+      <div class="row" style="margin-top:22px">
+        <button class="btn" data-stub>Back up</button>
+        <button class="btn" data-stub>Restore</button>
+      </div>
+      <p class="hint" style="text-align:center">Everything is stored on this device only.</p>
+    </section>
+
+    <!-- REVIEW -->
+    <section id="p-review" class="panel">
+      <div id="review-body"></div>
+    </section>
+  </main>
+
+  <nav>
+    <button data-tab="add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+    <button data-tab="words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Words</button>
+    <button data-tab="review"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Review<span class="badge" id="badge" hidden></span></button>
+  </nav>
+
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+const q = new URLSearchParams(location.search), embed = q.has("embed"), root = document.documentElement;
+if (q.has("serif")) root.classList.add("serif");
+
+/* Wide screen, not inside a frame: show the three screens side by side.
+   Each frame is this same page loaded again as one phone screen. */
+if (window.top === window.self && innerWidth >= 900 && !q.has("single")){
+  $("#app").hidden = true; $("#gallery").hidden = false;
+  const load = serif => {
+    $$(".seg button").forEach(b => b.classList.toggle("on", (b.dataset.f === "1") === serif));
+    $$("iframe").forEach(f => { f.src = location.pathname + "?embed&" + f.dataset.q + (serif ? "&serif" : ""); });
+  };
+  $$(".seg button").forEach(b => b.onclick = () => load(b.dataset.f === "1"));
+  load(q.has("serif"));
+  return;
+}
+
+/* ---------- dates (local calendar days, never UTC) ---------- */
+const dayStr = d => { const x = d ? new Date(d) : new Date();
+  return x.getFullYear() + "-" + String(x.getMonth()+1).padStart(2,"0") + "-" + String(x.getDate()).padStart(2,"0"); };
+const today = () => dayStr();
+const plusDays = n => { const d = new Date(); d.setDate(d.getDate()+n); return dayStr(d); };
+const when = due => {
+  if (due <= today()) return "due tonight";
+  if (due === plusDays(1)) return "back tomorrow";
+  const p = due.split("-").map(Number);
+  return "back " + new Date(p[0], p[1]-1, p[2]).toLocaleDateString(undefined, {month:"short", day:"numeric"});
+};
+
+/* ---------- sample data: phrase, meaning, situation, tag, status, due in N days, seen ---------- */
+let items = [
+  ["I'm down", "I want to join. I agree with the plan.", "A friend asked who wanted poutine after the game.", "Friends", "new", 0, 0],
+  ["It's not really my cup of tea", "A polite way to say I don't like it much.", "Chatting with someone I was getting to know, about camping.", "Dating", "new", 0, 0],
+  ["What a keener", "", "Two coworkers laughing about the new intern.", "Slang", "new", 0, 0],
+  ["Sorry, I slept in", "I woke up later than I planned.", "A coworker walking in late on Monday.", "Work", "new", 0, 0],
+  ["I'm just going to pop over to the store, do you need anything?", "\"Pop over\" means to go somewhere quickly, for a short time.", "My roommate, putting her boots on.", "Casual", "learning", 0, 1],
+  ["Let's circle back on that", "We will talk about it again later, not now.", "My manager, when the meeting ran out of time.", "Work", "learning", 0, 2],
+  ["Give'r", "Go for it with full effort.", "A guy at the rink before the last shift.", "Slang", "learning", 1, 2],
+  ["I'll take a rain check", "Not this time, but I would like to another time.", "I asked a coworker to lunch and she was busy.", "Work", "known", 22, 3],
+  ["I'm on the fence", "I can't decide yet.", "A friend deciding whether to move to Calgary.", "Friends", "known", 9, 4]
+].map((a, n) => ({ id:"s"+n, phrase:a[0], meaning:a[1], source:a[2], tag:a[3], status:a[4], due:plusDays(a[5]), seen:a[6], created:new Date().toISOString() }));
+
+/* ---------- model ---------- */
+const dueNow = () => items.filter(i => i.due <= today());
+const byId = id => items.find(i => i.id === id);
+const esc = s => (s||"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* Tags that exist, most used first. */
+const tagList = () => { const c = {}; items.forEach(i => { if (i.tag) c[i.tag] = (c[i.tag]||0) + 1; });
+  return Object.keys(c).sort((a,b) => c[b]-c[a] || a.localeCompare(b)); };
+/* "work" typed when "Work" exists means the existing tag. */
+const sameTag = v => tagList().find(t => t.toLowerCase() === v.toLowerCase()) || v;
+
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("on"), 1600);
+}
+
+/* ---------- header and tabs ---------- */
+let tab = "add", editingId = null, editFrom = "words";
+function syncSave(){
+  const s = $("#save"); if (s.classList.contains("ok")) return;
+  s.textContent = editingId ? "Update" : "Save";
+  s.classList.toggle("dim", !F.phrase.value.trim());
+}
+function chrome(){
+  const add = tab === "add", d = dueNow().length;
+  $("#save").hidden = !add; $("#stat").hidden = add;
+  $("#cancel").hidden = !(add && editingId); $("#title").hidden = add && !!editingId;
+  $("#stat").textContent = items.length + (items.length === 1 ? " phrase" : " phrases");
+  const b = $("#badge"); b.hidden = !d; b.textContent = d;
+  syncSave();
+}
+function go(t){
+  tab = t;
+  /* Leaving the screen ends the brief "Saved" confirmation, so edit mode never opens showing it. */
+  const s = $("#save"); clearTimeout(s._t); s.classList.remove("ok");
+  $$(".panel").forEach(p => p.classList.toggle("on", p.id === "p-"+t));
+  $$("nav button").forEach(b => { const on = b.dataset.tab === t;
+    b.classList.toggle("on", on); if (on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  if (t === "words") renderWords();
+  if (t === "review") startReview(false);
+  if (t === "add"){ renderTags(); growAll(); }
+  chrome(); $("main").scrollTop = 0;
+}
+$$("nav button").forEach(b => b.onclick = () => go(b.dataset.tab));
+
+/* ---------- add / edit ---------- */
+const F = { phrase:$("#f-phrase"), meaning:$("#f-meaning"), source:$("#f-source") };
+let formTag = "", typing = false;
+/* Boxes start one line tall and grow with the text. A hidden box measures 0,
+   so leave its height alone until the tab is shown. */
+const grow = t => { t.style.height = "auto"; const h = t.scrollHeight; t.style.height = h ? (h + 2) + "px" : ""; };
+const growAll = () => Object.values(F).forEach(grow);
+Object.values(F).forEach(t => t.addEventListener("input", () => { grow(t); syncSave(); }));
+F.phrase.addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); F.meaning.focus(); } });
+
+function fill(it){
+  F.phrase.value = it ? it.phrase : ""; F.meaning.value = it ? it.meaning : ""; F.source.value = it ? it.source : "";
+  formTag = it ? (it.tag || "") : ""; typing = false;
+  renderTags(); growAll(); syncSave();
+}
+function renderTags(){
+  const tags = tagList(); if (formTag && !tags.includes(formTag)) tags.unshift(formTag);
+  $("#tags").innerHTML = (typing
+      ? `<input class="taginput" id="newtag" placeholder="New tag" maxlength="20" autocomplete="off" enterkeyhint="done" aria-label="New tag">`
+      : `<button class="chip new" data-new="1"><span>New tag</span></button>`)
+    + tags.map(t => `<button class="chip${t===formTag?" on":""}" data-tag="${esc(t)}" aria-pressed="${t===formTag}"><span>${esc(t)}</span></button>`).join("");
+  const el = $("#newtag"); if (!el) return;
+  const done = () => { if (!typing) return; typing = false; const v = el.value.trim(); if (v) formTag = sameTag(v); renderTags(); };
+  el.onblur = done;
+  el.onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); done(); } };
+}
+$("#tags").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.new){ typing = true; renderTags(); $("#newtag").focus(); return; }
+  formTag = formTag === b.dataset.tag ? "" : b.dataset.tag; renderTags();
+};
+
+function doSave(){
+  /* A tag still being typed counts: on iOS, tapping Save does not blur the box. */
+  const nt = $("#newtag"); if (nt){ typing = false; if (nt.value.trim()) formTag = sameTag(nt.value.trim()); }
+  const phrase = F.phrase.value.trim(), meaning = F.meaning.value.trim(), source = F.source.value.trim();
+  if (!phrase){ renderTags(); F.phrase.focus(); return; }
+  if (editingId){
+    Object.assign(byId(editingId), {phrase, meaning, source, tag:formTag});
+    editingId = null; fill(null); go(editFrom); toast("Updated"); return;
+  }
+  items.unshift({ id:"n"+Date.now(), phrase, meaning, source, tag:formTag,
+    created:new Date().toISOString(), due:today(), status:"new", seen:0 });
+  fill(null); chrome();
+  /* Confirm where the thumb just was. A toast at the bottom would sit behind the keyboard. */
+  const s = $("#save"); s.textContent = "Saved"; s.classList.remove("dim"); s.classList.add("ok");
+  clearTimeout(s._t); s._t = setTimeout(() => { s.classList.remove("ok"); syncSave(); }, 1200);
+  F.phrase.focus();
+}
+$("#save").onclick = doSave;
+$("#cancel").onclick = () => { editingId = null; fill(null); go(editFrom); };
+
+/* ---------- words ---------- */
+let open = null, sure = null, filter = "";
+function renderWords(){
+  const tags = tagList(); if (filter && !tags.includes(filter)) filter = "";
+  $("#filters").innerHTML = `<button class="chip${filter?"":" on"}" data-tag="" aria-pressed="${!filter}"><span>All</span></button>`
+    + tags.map(t => `<button class="chip${t===filter?" on":""}" data-tag="${esc(t)}" aria-pressed="${t===filter}"><span>${esc(t)}</span></button>`).join("");
+  const s = $("#search").value.trim().toLowerCase();
+  const rows = items.filter(i => (!filter || i.tag === filter) &&
+    (!s || (i.phrase+" "+i.meaning+" "+i.source).toLowerCase().includes(s)));
+  if (!rows.length){
+    $("#list").innerHTML = items.length
+      ? `<div class="empty">Nothing matches.</div>`
+      : `<div class="empty"><b>No phrases yet</b>Tap Add whenever you hear something new.</div>`;
+    return;
+  }
+  $("#list").innerHTML = rows.map(i => `<div class="card${open===i.id?" open":""}" data-id="${i.id}">
+      <div class="p">${esc(i.phrase)}</div>
+      <div class="m${i.meaning?"":" none"}">${i.meaning ? esc(i.meaning) : "No meaning yet"}</div>
+      ${i.source ? `<div class="s">“${esc(i.source)}”</div>` : ""}
+      <div class="meta"><span class="pill ${i.status}">${i.status}</span>${i.tag ? `<span class="pill">${esc(i.tag)}</span>` : ""}<span class="when">${when(i.due)}</span></div>
+      ${open===i.id ? `<div class="acts">
+          <button data-a="edit">Edit</button>
+          <button data-a="reset">Review again</button>
+          <button data-a="del" class="del${sure===i.id?" sure":""}">${sure===i.id ? "Really delete?" : "Delete"}</button>
+        </div>` : ""}
+    </div>`).join("");
+}
+$("#list").onclick = e => {
+  const card = e.target.closest(".card"); if (!card) return;
+  const id = card.dataset.id, a = e.target.dataset.a, it = byId(id);
+  if (!a){ open = open === id ? null : id; sure = null; return renderWords(); }
+  if (a === "edit"){ editingId = id; editFrom = "words"; fill(it); go("add"); }
+  else if (a === "reset"){ it.status = "learning"; it.due = today(); open = null; chrome(); renderWords(); toast("Back in tonight's deck"); }
+  /* Delete asks once, in place: first tap arms the button, second tap deletes. */
+  else if (sure !== id){ sure = id; renderWords(); }
+  else { items = items.filter(x => x.id !== id); open = sure = null; chrome(); renderWords(); toast("Deleted"); }
+};
+$("#filters").onclick = e => { const b = e.target.closest("button"); if (!b) return; filter = b.dataset.tag; open = sure = null; renderWords(); };
+$("#search").oninput = () => { open = sure = null; renderWords(); };
+$("#bk-go").onclick = () => { $("#bk").hidden = true; toast("Mockup only: nothing to back up"); };
+$$("[data-stub]").forEach(b => b.onclick = () => toast("Not wired in the mockup"));
+
+/* ---------- review ---------- */
+let deck = [], pos = 0, practice = false, last = null;
+function startReview(all){ practice = all; deck = (all ? items : dueNow()).slice(); pos = 0; last = null; renderReview(); }
+
+function renderReview(){
+  const box = $("#review-body");
+  if (pos >= deck.length){
+    box.innerHTML = `<div class="done">
+        <div class="empty"><b>${deck.length ? "Done for tonight." : "You're all caught up."}</b>Nothing else is due.</div>
+        ${items.length ? `<button class="btn" id="all">Practise all phrases</button>` : ""}
+        ${last ? `<button class="btn text" id="undo">Undo last answer</button>` : ""}
+      </div>`;
+    if (items.length) $("#all").onclick = () => startReview(true);
+    if (last) $("#undo").onclick = undo;
+    return;
+  }
+  const it = deck[pos], has = !!it.meaning;
+  box.innerHTML = `
+    <div class="prog"><i style="width:${(pos/deck.length)*100}%"></i></div>
+    <div class="rtop"><span>${pos+1} of ${deck.length}${practice ? " · practice" : ""}</span>${last ? `<button class="hbtn" id="undo">Undo</button>` : ""}</div>
+    <div class="flash" id="flash" role="button" tabindex="0" aria-label="Show the answer">
+      <div class="q${it.phrase.length > 40 ? " long" : ""}">${esc(it.phrase)}</div>
+      <div class="below">
+        <div class="tap">tap to reveal</div>
+        <div class="a">
+          <div class="m${has?"":" none"}">${has ? esc(it.meaning) : "No meaning yet"}</div>
+          ${it.source ? `<div class="s">“${esc(it.source)}”</div>` : ""}
+        </div>
+      </div>
+    </div>
+    <div class="grade" id="grade">${has
+      ? `<button class="no" data-g="no">Didn't know</button><button class="yes" data-g="yes">Knew it</button>`
+      : `<button data-g="skip">Later</button><button class="act" data-g="add">Add meaning</button>`}</div>`;
+  const f = $("#flash");
+  f.onclick = reveal;
+  f.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); reveal(); } };
+  if (last) $("#undo").onclick = undo;
+  $("#grade").onclick = e => { const g = e.target.dataset.g; if (g) answer(g); };
+}
+/* Reveal only switches classes. Nothing is re-rendered, so nothing moves. */
+function reveal(){ $("#flash").classList.add("open"); $("#grade").classList.add("on"); }
+function answer(g){
+  const it = deck[pos];
+  if (g === "add"){ editingId = it.id; editFrom = "review"; fill(it); go("add"); F.meaning.focus(); return; }
+  last = { it, prev:{ status:it.status, due:it.due, seen:it.seen } };
+  if (g !== "skip"){
+    it.seen = (it.seen || 0) + 1;
+    if (g === "yes"){ it.status = "known"; it.due = plusDays(30); }
+    else { it.status = "learning"; it.due = plusDays(1); }
+  }
+  pos++; chrome(); renderReview();
+}
+function undo(){ Object.assign(last.it, last.prev); last = null; pos--; chrome(); renderReview(); reveal(); }
+
+/* ---------- boot ---------- */
+const label = () => { $("#mock span").textContent = "mockup · " + (root.classList.contains("serif") ? "serif" : "sans"); };
+$("#mock").hidden = embed; label();
+$("#mock").onclick = () => { root.classList.toggle("serif"); label(); growAll(); };
+/* iOS only applies :active styles once a touch listener exists. */
+document.addEventListener("touchstart", () => {}, {passive:true});
+
+const start = q.get("tab") || "add";
+if (embed && start === "words") filter = "Work";
+if (embed && start === "add") fill({ phrase:"No worries", meaning:"It's fine, you don't need to apologize.",
+  source:"I was late meeting a friend and said sorry.", tag:"Friends" });
+go(start);
+/* The laptop view shows Review one answer in, with a card already revealed. */
+if (embed && start === "review"){ answer("no"); reveal(); }
+
+window.__mock = { get items(){ return items; }, get deck(){ return deck; }, get pos(){ return pos; }, go, answer, reveal, undo, dueNow, today, plusDays };
+})();
+</script>
+</body>
+</html>

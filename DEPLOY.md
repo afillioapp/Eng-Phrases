@@ -215,7 +215,7 @@ files.
 
 ## The design mockup on Vercel
 
-`https://eng-phrases.vercel.app` serves `mockup/index.html`: proposed design changes,
+`https://eng-phrases.vercel.app` now forwards to the real app. The old mockup is at `/proposals.html` (`mockup/proposals.html`): proposed design changes,
 filled with sample phrases. It never saves anything, so don't add it to your home
 screen or type real phrases into it. Vercel rebuilds it from the `mockup/` folder on
 every push. The real app is deliberately not on Vercel: a second address would hold a
